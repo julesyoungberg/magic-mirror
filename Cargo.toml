@@ -8,7 +8,9 @@ edition = "2021"
 [dependencies]
 dlib-face-recognition = "0.2.2"
 dlib-face-recognition-sys = "19.22.0-rc.1"
-half = "1.7.1"
+half = "1.8"
 nannou = { version = "0.18", features = ["spirv"] }
-opencv = "0.63.1"
-ringbuf = "0.2.3"
+opencv = "0.63"
+regex = "1"
+ringbuf = "0.2"
+shaderc = "0.7"

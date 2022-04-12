@@ -1,6 +1,7 @@
 use nannou::prelude::*;
 
-mod bufferable;
+mod render;
+mod uniforms;
 mod util;
 mod video_capture;
 mod webcam;
@@ -10,8 +11,13 @@ fn main() {
 }
 
 struct Model {
+    render: render::CustomRenderer,
+    uniforms: uniforms::UniformBuffer,
     webcam_capture: webcam::WebcamCapture,
 }
+
+const WIDTH: u32 = 1920;
+const HEIGHT: u32 = 1080;
 
 fn model(app: &App) -> Model {
     // create window
@@ -23,23 +29,78 @@ fn model(app: &App) -> Model {
         .unwrap();
 
     let window = app.window(main_window_id).unwrap();
+    let device = window.device();
+    let sample_count = window.msaa_samples();
+
+    println!("sample count: {:?}", sample_count);
+
+    let vs_mod = util::compile_shader(app, device, "default.vert", shaderc::ShaderKind::Vertex);
+    let fs_mod = util::compile_shader(app, device, "default.frag", shaderc::ShaderKind::Fragment);
+
+    // Create the buffer that will store the uniforms.
+    let uniforms = uniforms::UniformBuffer::new(device, WIDTH as f32, HEIGHT as f32);
 
     let (width, height) = window.inner_size_pixels();
     let size = pt2(width as f32, height as f32);
-
-    let device = window.device();
 
     let mut webcam_capture = webcam::WebcamCapture::new();
 
     webcam_capture.start_session(&device, size);
 
-    Model { webcam_capture }
+    let textures = Some(vec![
+        &webcam_capture.video_capture.as_ref().unwrap().video_texture,
+    ]);
+
+    let sampler = wgpu::SamplerBuilder::new().build(device);
+
+    let render = render::CustomRenderer::new::<uniforms::Uniforms>(
+        device,
+        &vs_mod,
+        &fs_mod,
+        None,
+        None,
+        textures.as_ref(),
+        Some(&sampler),
+        Some(&uniforms.buffer),
+        WIDTH,
+        HEIGHT,
+        1,
+        sample_count,
+    )
+    .unwrap();
+
+    Model {
+        render,
+        uniforms,
+        webcam_capture,
+    }
 }
 
-fn update(_app: &App, model: &mut Model, _update: Update) {
+fn update(app: &App, model: &mut Model, _update: Update) {
+    let window = app.main_window();
+    let device = window.device();
+
     model.webcam_capture.update();
+
+    // The encoder we'll use to encode the compute pass and render pass.
+    let desc = wgpu::CommandEncoderDescriptor {
+        label: Some("encoder"),
+    };
+    let mut encoder = device.create_command_encoder(&desc);
+
+    model.uniforms.update(device, &mut encoder);
+
+    model.render.render(&mut encoder);
+
+    // submit encoded command buffer
+    window.queue().submit(Some(encoder.finish()));
 }
 
-fn view(_app: &App, _model: &Model, frame: Frame) {
-    frame.clear(PURPLE);
+fn view(_app: &App, model: &Model, frame: Frame) {
+    // Sample the texture and write it to the frame.
+    let mut encoder = frame.command_encoder();
+    model
+        .render
+        .texture_reshaper
+        .encode_render_pass(frame.texture_view(), &mut *encoder);
 }
