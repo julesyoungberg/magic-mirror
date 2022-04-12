@@ -1,4 +1,6 @@
+use dlib_face_recognition::*;
 use nannou::prelude::*;
+use opencv::prelude::*;
 
 mod render;
 mod uniforms;
@@ -11,7 +13,10 @@ fn main() {
 }
 
 struct Model {
+    face_detector: FaceDetector,
+    landmark_predictor: LandmarkPredictor,
     render: render::CustomRenderer,
+    size: Vec2,
     uniforms: uniforms::UniformBuffer,
     webcam_capture: webcam::WebcamCapture,
 }
@@ -70,7 +75,10 @@ fn model(app: &App) -> Model {
     .unwrap();
 
     Model {
+        face_detector: FaceDetector::default(),
+        landmark_predictor: LandmarkPredictor::default(),
         render,
+        size,
         uniforms,
         webcam_capture,
     }
@@ -81,6 +89,31 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     let device = window.device();
 
     model.webcam_capture.update();
+
+    let frame_ref = model
+        .webcam_capture
+        .video_capture
+        .as_ref()
+        .unwrap()
+        .frame
+        .as_ref();
+
+    if let Some(frame) = frame_ref {
+        let ptr = frame.datastart();
+        let matrix = unsafe { ImageMatrix::new(model.size.x as usize, model.size.y as usize, ptr) };
+        let face_locations = model.face_detector.face_locations(&matrix);
+        println!("num faces: {:?}", face_locations.len());
+
+        for face in face_locations.iter() {
+            println!("face location: {:?}", face);
+
+            let landmarks = model.landmark_predictor.face_landmarks(&matrix, &face);
+
+            for landmark in landmarks.iter() {
+                println!("landmark: {:?}", landmark);
+            }
+        }
+    }
 
     // The encoder we'll use to encode the compute pass and render pass.
     let desc = wgpu::CommandEncoderDescriptor {

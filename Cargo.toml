@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dlib-face-recognition = "0.2.2"
+dlib-face-recognition = { version = "0.2.2", features = ["embed-all"] }
 dlib-face-recognition-sys = "19.22.0-rc.1"
 half = "1.8"
 nannou = { version = "0.18", features = ["spirv"] }

@@ -652,10 +652,12 @@ version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab0b2bb8e3415faf445d2a5bbbd68504ca28e1287548a331406b8f27f99af41c"
 dependencies = [
+ "bzip2",
  "cpp",
  "cpp_build",
  "dlib-face-recognition-sys",
  "image",
+ "reqwest",
 ]
 
 [[package]]

@@ -19,7 +19,7 @@ enum Message {
 }
 
 pub struct VideoConsumer {
-    consumer: Consumer<Vec<Vec<opencv::core::Vec3b>>>,
+    consumer: Consumer<opencv::core::Mat>,
 }
 
 impl fmt::Debug for VideoConsumer {
@@ -42,6 +42,7 @@ fn floats_as_byte_vec(data: &[f32]) -> Vec<u8> {
 #[derive(Debug)]
 pub struct VideoCapture {
     pub error: Option<String>,
+    pub frame: Option<opencv::core::Mat>,
     pub running: bool,
     pub speed: f32,
     pub video_size: Vec2,
@@ -50,7 +51,6 @@ pub struct VideoCapture {
     capture_thread: Option<std::thread::JoinHandle<()>>,
     message_channel_tx: Sender<Message>,
     error_channel_rx: Receiver<String>,
-    frame_data: Vec<Vec<opencv::core::Vec3b>>,
     video_consumer: VideoConsumer,
 }
 
@@ -77,7 +77,7 @@ impl VideoCapture {
         );
 
         // setup ring buffer
-        let video_ring_buffer = RingBuffer::<Vec<Vec<opencv::core::Vec3b>>>::new(2);
+        let video_ring_buffer = RingBuffer::<opencv::core::Mat>::new(2);
         let (mut video_producer, video_consumer) = video_ring_buffer.split();
 
         // setup communication channels
@@ -118,9 +118,7 @@ impl VideoCapture {
                     }
                 }
 
-                // get usable data
-                let data: Vec<Vec<opencv::core::Vec3b>> = frame.to_vec_2d().unwrap();
-                video_producer.push(data).ok();
+                video_producer.push(frame.clone()).ok();
 
                 if let Ok(msg) = message_channel_rx.try_recv() {
                     match msg {
@@ -161,7 +159,7 @@ impl VideoCapture {
             message_channel_tx,
             error: None,
             error_channel_rx,
-            frame_data: vec![],
+            frame: None,
             running: true,
             speed,
             video_consumer: VideoConsumer {
@@ -198,10 +196,7 @@ impl VideoCapture {
             return;
         }
 
-        let popped = self.video_consumer.consumer.pop();
-        if let Some(d) = popped {
-            self.frame_data = d;
-        }
+        self.frame = self.video_consumer.consumer.pop();
     }
 
     pub fn update_texture(&self, device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder) {
@@ -209,15 +204,18 @@ impl VideoCapture {
             return;
         }
 
-        if self.frame_data.is_empty() || self.frame_data[0].is_empty() {
-            return;
-        }
+        let frame = match self.frame.as_ref() {
+            Some(f) => f,
+            None => return,
+        };
+
+        let frame_data: Vec<Vec<opencv::core::Vec3b>> = frame.to_vec_2d().unwrap();
 
         let width = self.video_size.x as u32;
         let height = self.video_size.y as u32;
 
         let image = image::ImageBuffer::from_fn(width, height, |x, y| {
-            let pixel = self.frame_data[y as usize][(width - x - 1) as usize];
+            let pixel = frame_data[y as usize][(width - x - 1) as usize];
             // convert from BGR to RGB
             image::Rgba([
                 pixel[2] as f32 / 255.0,
