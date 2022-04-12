@@ -99,8 +99,14 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         .as_ref();
 
     if let Some(frame) = frame_ref {
+        let video_size = model
+            .webcam_capture
+            .video_capture
+            .as_ref()
+            .unwrap()
+            .video_size;
         let ptr = frame.datastart();
-        let matrix = unsafe { ImageMatrix::new(model.size.x as usize, model.size.y as usize, ptr) };
+        let matrix = unsafe { ImageMatrix::new(video_size.x as usize, video_size.y as usize, ptr) };
         let face_locations = model.face_detector.face_locations(&matrix);
         println!("num faces: {:?}", face_locations.len());
 
