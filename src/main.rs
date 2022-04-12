@@ -88,6 +88,8 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     };
     let mut encoder = device.create_command_encoder(&desc);
 
+    model.webcam_capture.update_texture(device, &mut encoder);
+
     model.uniforms.update(device, &mut encoder);
 
     model.render.render(&mut encoder);

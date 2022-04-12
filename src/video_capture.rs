@@ -89,17 +89,26 @@ impl VideoCapture {
             let clock = SystemTime::now();
             let mut video_speed = speed as f64;
 
+            let mut frame = unsafe {
+                opencv::core::Mat::new_rows_cols(
+                    height.round() as i32,
+                    width.round() as i32,
+                    opencv::core::CV_8UC3,
+                )
+                .unwrap()
+            };
+
             'capture: loop {
                 // read from camera
                 let start_time = clock.elapsed().unwrap().as_secs_f64();
-                let mut frame = opencv::core::Mat::default();
                 match capture.read(&mut frame) {
                     Ok(success) => {
                         if !success {
                             println!("No video frame available");
-                            capture
-                                .set(opencv::videoio::CAP_PROP_POS_FRAMES, 0.0)
-                                .unwrap();
+                            // capture
+                            //     .set(opencv::videoio::CAP_PROP_POS_FRAMES, 0.0)
+                            //     .unwrap();
+                            continue 'capture;
                         }
                     }
                     Err(e) => {
