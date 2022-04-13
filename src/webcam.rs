@@ -68,4 +68,8 @@ impl WebcamCapture {
             video_capture.unpause();
         }
     }
+
+    pub fn get_frame_ref(&self) -> Option<&Mat> {
+        self.video_capture.as_ref().unwrap().frame.as_ref()
+    }
 }

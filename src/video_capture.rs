@@ -28,17 +28,6 @@ impl fmt::Debug for VideoConsumer {
     }
 }
 
-fn float_as_bytes(data: &f32) -> [u8; 2] {
-    half::f16::from_f32(*data).to_ne_bytes()
-}
-
-fn floats_as_byte_vec(data: &[f32]) -> Vec<u8> {
-    let mut bytes = vec![];
-    data.iter()
-        .for_each(|f| bytes.extend(float_as_bytes(f).iter()));
-    bytes
-}
-
 #[derive(Debug)]
 pub struct VideoCapture {
     pub error: Option<String>,
@@ -204,31 +193,15 @@ impl VideoCapture {
             return;
         }
 
-        let frame = match self.frame.as_ref() {
+        let frame = match &self.frame {
             Some(f) => f,
             None => return,
         };
 
-        let frame_data: Vec<Vec<opencv::core::Vec3b>> = frame.to_vec_2d().unwrap();
-
         let width = self.video_size.x as u32;
         let height = self.video_size.y as u32;
 
-        let image = image::ImageBuffer::from_fn(width, height, |x, y| {
-            let pixel = frame_data[y as usize][(width - x - 1) as usize];
-            // convert from BGR to RGB
-            image::Rgba([
-                pixel[2] as f32 / 255.0,
-                pixel[1] as f32 / 255.0,
-                pixel[0] as f32 / 255.0,
-                1.0,
-            ])
-        });
-
-        let flat_samples = image.as_flat_samples();
-        let byte_vec = floats_as_byte_vec(flat_samples.as_slice());
-        self.video_texture
-            .upload_data(device, encoder, &byte_vec[..]);
+        util::upload_mat_to_texture(device, encoder, frame, &self.video_texture, width, height);
     }
 
     pub fn pause(&mut self) {

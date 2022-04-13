@@ -8,6 +8,7 @@ mod util;
 mod video_capture;
 mod webcam;
 
+use crate::contours::*;
 use crate::faces::*;
 
 fn main() {
@@ -15,9 +16,11 @@ fn main() {
 }
 
 struct Model {
+    contour_detector: ContourDetector,
+    contour_texture_reshaper: wgpu::TextureReshaper,
     face_detector: FullFaceDetector,
     size: Vec2,
-    texture_reshaper: wgpu::TextureReshaper,
+    video_texture_reshaper: wgpu::TextureReshaper,
     video_size: Vec2,
     webcam_capture: webcam::WebcamCapture,
 }
@@ -31,6 +34,7 @@ fn model(app: &App) -> Model {
         .new_window()
         .size(WIDTH, HEIGHT)
         .view(view)
+        .key_pressed(key_pressed)
         .build()
         .unwrap();
 
@@ -51,13 +55,20 @@ fn model(app: &App) -> Model {
 
     let video_texture = &webcam_capture.video_capture.as_ref().unwrap().video_texture;
 
-    let texture_reshaper =
+    let video_texture_reshaper =
         render::create_texture_reshaper(&device, &video_texture, 1, sample_count);
 
+    let contour_detector = ContourDetector::new(&device, video_size);
+
+    let contour_texture_reshaper =
+        render::create_texture_reshaper(&device, &contour_detector.texture, 1, sample_count);
+
     Model {
+        contour_detector,
+        contour_texture_reshaper,
         face_detector: FullFaceDetector::default(),
         size,
-        texture_reshaper,
+        video_texture_reshaper,
         video_size,
         webcam_capture,
     }
@@ -69,16 +80,9 @@ fn update(app: &App, model: &mut Model, _update: Update) {
 
     model.webcam_capture.update();
 
-    let frame_ref = model
-        .webcam_capture
-        .video_capture
-        .as_ref()
-        .unwrap()
-        .frame
-        .as_ref();
-
-    if let Some(frame) = frame_ref {
+    if let Some(frame) = model.webcam_capture.get_frame_ref() {
         model.face_detector.update(frame, model.video_size);
+        model.contour_detector.update(frame);
     }
 
     // The encoder we'll use to encode the compute pass and render pass.
@@ -88,6 +92,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     let mut encoder = device.create_command_encoder(&desc);
 
     model.webcam_capture.update_texture(device, &mut encoder);
+    model.contour_detector.update_texture(device, &mut encoder);
 
     // submit encoded command buffer
     window.queue().submit(Some(encoder.finish()));
@@ -98,7 +103,8 @@ fn view(app: &App, model: &Model, frame: Frame) {
     {
         let mut encoder = frame.command_encoder();
         model
-            .texture_reshaper
+            .video_texture_reshaper
+            // .contour_texture_reshaper
             .encode_render_pass(frame.texture_view(), &mut *encoder);
     }
 
@@ -109,4 +115,15 @@ fn view(app: &App, model: &Model, frame: Frame) {
         .draw_faces(&draw, &model.video_size, &model.size);
 
     draw.to_frame(app, &frame).unwrap();
+}
+
+fn key_pressed(_app: &App, model: &mut Model, key: Key) {
+    match key {
+        Key::Space => {
+            if let Some(frame) = model.webcam_capture.get_frame_ref() {
+                model.contour_detector.set_background(frame.clone());
+            }
+        }
+        _ => (),
+    };
 }

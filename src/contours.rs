@@ -1,16 +1,29 @@
+use nannou::image;
 use nannou::prelude::*;
 use opencv::prelude::*;
+
+use crate::util;
 
 pub struct ContourDetector {
     background: Option<Mat>,
     silhouette: Option<Mat>,
+    size: Vec2,
+    pub texture: wgpu::Texture,
 }
 
 impl ContourDetector {
-    pub fn new() -> Self {
+    pub fn new(device: &wgpu::Device, size: Vec2) -> Self {
+        let texture = util::create_texture(
+            device,
+            [size.x as u32, size.y as u32],
+            wgpu::TextureFormat::Rgba16Float,
+        );
+
         Self {
             background: None,
             silhouette: None,
+            size,
+            texture,
         }
     }
 
@@ -18,8 +31,8 @@ impl ContourDetector {
         self.background = Some(frame);
     }
 
-    pub fn update(&mut self, frame: &Mat, video_size: Vec2) {
-        let bg = match self.background.as_ref() {
+    pub fn update(&mut self, frame: &Mat) {
+        let bg = match &self.background {
             Some(bg) => bg,
             None => return,
         };
@@ -63,10 +76,16 @@ impl ContourDetector {
         // save result
         self.silhouette = Some(silhouette);
     }
-}
 
-impl Default for ContourDetector {
-    fn default() -> Self {
-        Self::new()
+    pub fn update_texture(&self, device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder) {
+        let frame = match &self.silhouette {
+            Some(s) => s,
+            None => return,
+        };
+
+        let width = self.size.x as u32;
+        let height = self.size.y as u32;
+
+        util::upload_mat_to_texture(device, encoder, frame, &self.texture, width, height);
     }
 }
