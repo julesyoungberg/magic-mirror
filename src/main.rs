@@ -1,5 +1,6 @@
 use nannou::prelude::*;
 
+mod contours;
 mod faces;
 mod render;
 mod uniforms;
