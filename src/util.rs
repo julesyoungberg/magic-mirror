@@ -1,11 +1,6 @@
 use std::fs;
-use std::path::PathBuf;
 
 use nannou::prelude::*;
-
-pub fn universal_path(input: String) -> String {
-    PathBuf::from(input).into_os_string().into_string().unwrap()
-}
 
 pub fn create_texture(
     device: &wgpu::Device,
@@ -41,4 +36,8 @@ pub fn compile_shader(
         .compile_into_spirv(code.as_str(), kind, filename, "main", None)
         .unwrap();
     wgpu::shader_from_spirv_bytes(device, spirv.as_binary_u8())
+}
+
+pub fn map(input: f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32 {
+    return (input - in_min) / (in_max - in_min) * (out_max - out_min) + out_min;
 }
