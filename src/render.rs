@@ -205,7 +205,7 @@ pub fn create_app_texture(
         .build(device)
 }
 
-fn create_texture_reshaper(
+pub fn create_texture_reshaper(
     device: &wgpu::Device,
     texture: &wgpu::Texture,
     src_sample_count: u32,

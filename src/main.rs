@@ -15,10 +15,9 @@ fn main() {
 
 struct Model {
     face_detector: FullFaceDetector,
-    render: render::CustomRenderer,
     size: Vec2,
+    texture_reshaper: wgpu::TextureReshaper,
     video_size: Vec2,
-    uniforms: uniforms::UniformBuffer,
     webcam_capture: webcam::WebcamCapture,
 }
 
@@ -29,7 +28,7 @@ fn model(app: &App) -> Model {
     // create window
     let main_window_id = app
         .new_window()
-        .size(1920, 1080)
+        .size(WIDTH, HEIGHT)
         .view(view)
         .build()
         .unwrap();
@@ -40,12 +39,6 @@ fn model(app: &App) -> Model {
 
     println!("sample count: {:?}", sample_count);
 
-    let vs_mod = util::compile_shader(app, device, "default.vert", shaderc::ShaderKind::Vertex);
-    let fs_mod = util::compile_shader(app, device, "default.frag", shaderc::ShaderKind::Fragment);
-
-    // Create the buffer that will store the uniforms.
-    let uniforms = uniforms::UniformBuffer::new(device, WIDTH as f32, HEIGHT as f32);
-
     let (width, height) = window.inner_size_pixels();
     let size = pt2(width as f32, height as f32);
 
@@ -55,34 +48,16 @@ fn model(app: &App) -> Model {
 
     let video_size = webcam_capture.video_capture.as_ref().unwrap().video_size;
 
-    let textures = Some(vec![
-        &webcam_capture.video_capture.as_ref().unwrap().video_texture,
-    ]);
+    let video_texture = &webcam_capture.video_capture.as_ref().unwrap().video_texture;
 
-    let sampler = wgpu::SamplerBuilder::new().build(device);
-
-    let render = render::CustomRenderer::new::<uniforms::Uniforms>(
-        device,
-        &vs_mod,
-        &fs_mod,
-        None,
-        None,
-        textures.as_ref(),
-        Some(&sampler),
-        Some(&uniforms.buffer),
-        WIDTH,
-        HEIGHT,
-        1,
-        sample_count,
-    )
-    .unwrap();
+    let texture_reshaper =
+        render::create_texture_reshaper(&device, &video_texture, 1, sample_count);
 
     Model {
         face_detector: FullFaceDetector::default(),
-        render,
         size,
+        texture_reshaper,
         video_size,
-        uniforms,
         webcam_capture,
     }
 }
@@ -113,10 +88,6 @@ fn update(app: &App, model: &mut Model, _update: Update) {
 
     model.webcam_capture.update_texture(device, &mut encoder);
 
-    model.uniforms.update(device, &mut encoder);
-
-    model.render.render(&mut encoder);
-
     // submit encoded command buffer
     window.queue().submit(Some(encoder.finish()));
 }
@@ -126,7 +97,6 @@ fn view(app: &App, model: &Model, frame: Frame) {
     {
         let mut encoder = frame.command_encoder();
         model
-            .render
             .texture_reshaper
             .encode_render_pass(frame.texture_view(), &mut *encoder);
     }
