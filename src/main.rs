@@ -12,11 +12,30 @@ fn main() {
     nannou::app(model).update(update).run();
 }
 
+#[derive(Clone, Debug)]
+struct Face {
+    position: Rectangle,
+    landmarks: Vec<Vec2>,
+}
+
+impl Face {
+    fn border_rect(&self) -> Vec<Vec2> {
+        vec![
+            Vec2::new(self.position.left as f32, self.position.top as f32),
+            Vec2::new(self.position.right as f32, self.position.top as f32),
+            Vec2::new(self.position.right as f32, self.position.bottom as f32),
+            Vec2::new(self.position.left as f32, self.position.bottom as f32),
+        ]
+    }
+}
+
 struct Model {
     face_detector: FaceDetector,
+    faces: Vec<Face>,
     landmark_predictor: LandmarkPredictor,
     render: render::CustomRenderer,
     size: Vec2,
+    video_size: Vec2,
     uniforms: uniforms::UniformBuffer,
     webcam_capture: webcam::WebcamCapture,
 }
@@ -52,6 +71,8 @@ fn model(app: &App) -> Model {
 
     webcam_capture.start_session(&device, size);
 
+    let video_size = webcam_capture.video_capture.as_ref().unwrap().video_size;
+
     let textures = Some(vec![
         &webcam_capture.video_capture.as_ref().unwrap().video_texture,
     ]);
@@ -76,9 +97,11 @@ fn model(app: &App) -> Model {
 
     Model {
         face_detector: FaceDetector::default(),
+        faces: vec![],
         landmark_predictor: LandmarkPredictor::default(),
         render,
         size,
+        video_size,
         uniforms,
         webcam_capture,
     }
@@ -99,26 +122,30 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         .as_ref();
 
     if let Some(frame) = frame_ref {
-        let video_size = model
-            .webcam_capture
-            .video_capture
-            .as_ref()
-            .unwrap()
-            .video_size;
         let ptr = frame.datastart();
-        let matrix = unsafe { ImageMatrix::new(video_size.x as usize, video_size.y as usize, ptr) };
+        let matrix = unsafe {
+            ImageMatrix::new(
+                model.video_size.x as usize,
+                model.video_size.y as usize,
+                ptr,
+            )
+        };
         let face_locations = model.face_detector.face_locations(&matrix);
-        println!("num faces: {:?}", face_locations.len());
 
-        for face in face_locations.iter() {
-            println!("face location: {:?}", face);
+        model.faces = face_locations
+            .iter()
+            .map(|face| {
+                let landmarks = model.landmark_predictor.face_landmarks(&matrix, &face);
 
-            let landmarks = model.landmark_predictor.face_landmarks(&matrix, &face);
-
-            for landmark in landmarks.iter() {
-                println!("landmark: {:?}", landmark);
-            }
-        }
+                Face {
+                    position: *face,
+                    landmarks: landmarks
+                        .iter()
+                        .map(|l| Vec2::new(l.x() as f32, l.y() as f32))
+                        .collect(),
+                }
+            })
+            .collect();
     }
 
     // The encoder we'll use to encode the compute pass and render pass.
@@ -137,11 +164,58 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     window.queue().submit(Some(encoder.finish()));
 }
 
-fn view(_app: &App, model: &Model, frame: Frame) {
+fn map(input: f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32 {
+    return (input - in_min) / (in_max - in_min) * (out_max - out_min) + out_min;
+}
+
+fn draw_faces(model: &Model, draw: &Draw) {
+    let hwidth = model.size.x * 0.5;
+    let hheight = model.size.y * 0.5;
+
+    for face in &model.faces {
+        let mut face_rect: Vec<Vec2> = face
+            .border_rect()
+            .iter()
+            .map(|r| {
+                Vec2::new(
+                    map(r.x, 0.0, model.video_size.x, hwidth, -hwidth) * 0.5,
+                    map(r.y, 0.0, model.video_size.y, hheight, -hheight) * 0.5,
+                )
+            })
+            .collect();
+
+        face_rect.push(face_rect[0].clone());
+
+        draw.path()
+            .stroke()
+            .color(STEELBLUE)
+            .weight(3.0)
+            .points(face_rect);
+
+        for landmark in &face.landmarks {
+            draw.ellipse()
+                .color(STEELBLUE)
+                .w(10.0)
+                .h(10.0)
+                .x(map(landmark.x, 0.0, model.video_size.x, hwidth, -hwidth) * 0.5)
+                .y(map(landmark.y, 0.0, model.video_size.y, hheight, -hheight) * 0.5);
+        }
+    }
+}
+
+fn view(app: &App, model: &Model, frame: Frame) {
     // Sample the texture and write it to the frame.
-    let mut encoder = frame.command_encoder();
-    model
-        .render
-        .texture_reshaper
-        .encode_render_pass(frame.texture_view(), &mut *encoder);
+    {
+        let mut encoder = frame.command_encoder();
+        model
+            .render
+            .texture_reshaper
+            .encode_render_pass(frame.texture_view(), &mut *encoder);
+    }
+
+    let draw = app.draw();
+
+    draw_faces(model, &draw);
+
+    draw.to_frame(app, &frame).unwrap();
 }
