@@ -55,7 +55,7 @@ pub fn floats_as_byte_vec(data: &[f32]) -> Vec<u8> {
     bytes
 }
 
-pub fn upload_mat_to_texture(
+pub fn upload_mat_to_texture_rgb(
     device: &wgpu::Device,
     encoder: &mut wgpu::CommandEncoder,
     frame: &Mat,
@@ -74,6 +74,27 @@ pub fn upload_mat_to_texture(
             pixel[0] as f32 / 255.0,
             1.0,
         ])
+    });
+
+    let flat_samples = image.as_flat_samples();
+    let byte_vec = floats_as_byte_vec(flat_samples.as_slice());
+
+    texture.upload_data(device, encoder, &byte_vec);
+}
+
+pub fn upload_mat_to_texture_gray(
+    device: &wgpu::Device,
+    encoder: &mut wgpu::CommandEncoder,
+    frame: &Mat,
+    texture: &wgpu::Texture,
+    width: u32,
+    height: u32,
+) {
+    let frame_data: &[u8] = frame.data_bytes().unwrap();
+
+    let image = image::ImageBuffer::from_fn(width, height, |x, y| {
+        let index = (y * width + (width - x - 1)) as usize;
+        image::Luma([frame_data[index] as f32 / 255.0])
     });
 
     let flat_samples = image.as_flat_samples();

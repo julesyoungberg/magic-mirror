@@ -1,12 +1,13 @@
 use nannou::image;
 use nannou::prelude::*;
 use opencv::prelude::*;
+use opencv::video;
 
 use crate::util;
 
 pub struct ContourDetector {
-    background: Option<Mat>,
-    silhouette: Option<Mat>,
+    background_subtractor: Box<dyn BackgroundSubtractor>,
+    foreground_mask: Option<Mat>,
     size: Vec2,
     pub texture: wgpu::Texture,
 }
@@ -16,69 +17,41 @@ impl ContourDetector {
         let texture = util::create_texture(
             device,
             [size.x as u32, size.y as u32],
-            wgpu::TextureFormat::Rgba16Float,
+            wgpu::TextureFormat::R16Float,
         );
 
         Self {
-            background: None,
-            silhouette: None,
+            background_subtractor: Box::new(
+                video::create_background_subtractor_knn(500, 400.0, false).unwrap(),
+            ),
+            foreground_mask: None,
             size,
             texture,
         }
     }
 
-    pub fn set_background(&mut self, frame: Mat) {
-        self.background = Some(frame);
-    }
-
     pub fn update(&mut self, frame: &Mat) {
-        let bg = match &self.background {
-            Some(bg) => bg,
-            None => return,
+        let mut foreground_mask = unsafe {
+            opencv::core::Mat::new_rows_cols(
+                self.size.x as i32,
+                self.size.y as i32,
+                opencv::core::CV_8UC1,
+            )
+            .unwrap()
         };
 
-        // subtract background
-        let sub_result = match frame - bg {
-            opencv::core::MatExprResult::Ok(result) => result,
-            opencv::core::MatExprResult::Err(e) => {
-                eprintln!("error: {:?}", e);
-                self.silhouette = None;
-                return;
-            }
-        };
-
-        // get subtraction result
-        let mut bg_diff = unsafe { Mat::from_raw(sub_result.into_raw()) };
-
-        // convert to grayscale
-        let mut gray_diff = Mat::default();
-        opencv::imgproc::cvt_color(
-            &mut bg_diff,
-            &mut gray_diff,
-            opencv::imgproc::ColorConversionCodes::COLOR_BGR2GRAY as i32,
-            1,
-        )
-        .unwrap();
-
-        // apply thresholding
-        let mut silhouette = Mat::default();
-        opencv::imgproc::threshold(
-            &mut gray_diff,
-            &mut silhouette,
-            1.0,
-            255.0,
-            opencv::imgproc::ThresholdTypes::THRESH_BINARY as i32,
-        )
-        .unwrap();
+        self.background_subtractor
+            .apply(&frame, &mut foreground_mask, -1.0)
+            .unwrap();
 
         // @todo detect contours
 
         // save result
-        self.silhouette = Some(silhouette);
+        self.foreground_mask = Some(foreground_mask);
     }
 
     pub fn update_texture(&self, device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder) {
-        let frame = match &self.silhouette {
+        let frame = match &self.foreground_mask {
             Some(s) => s,
             None => return,
         };
@@ -86,6 +59,6 @@ impl ContourDetector {
         let width = self.size.x as u32;
         let height = self.size.y as u32;
 
-        util::upload_mat_to_texture(device, encoder, frame, &self.texture, width, height);
+        util::upload_mat_to_texture_gray(device, encoder, frame, &self.texture, width, height);
     }
 }

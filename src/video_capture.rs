@@ -201,7 +201,7 @@ impl VideoCapture {
         let width = self.video_size.x as u32;
         let height = self.video_size.y as u32;
 
-        util::upload_mat_to_texture(device, encoder, frame, &self.video_texture, width, height);
+        util::upload_mat_to_texture_rgb(device, encoder, frame, &self.video_texture, width, height);
     }
 
     pub fn pause(&mut self) {

@@ -34,7 +34,6 @@ fn model(app: &App) -> Model {
         .new_window()
         .size(WIDTH, HEIGHT)
         .view(view)
-        .key_pressed(key_pressed)
         .build()
         .unwrap();
 
@@ -103,8 +102,8 @@ fn view(app: &App, model: &Model, frame: Frame) {
     {
         let mut encoder = frame.command_encoder();
         model
-            .video_texture_reshaper
-            // .contour_texture_reshaper
+            // .video_texture_reshaper
+            .contour_texture_reshaper
             .encode_render_pass(frame.texture_view(), &mut *encoder);
     }
 
@@ -115,15 +114,4 @@ fn view(app: &App, model: &Model, frame: Frame) {
         .draw_faces(&draw, &model.video_size, &model.size);
 
     draw.to_frame(app, &frame).unwrap();
-}
-
-fn key_pressed(_app: &App, model: &mut Model, key: Key) {
-    match key {
-        Key::Space => {
-            if let Some(frame) = model.webcam_capture.get_frame_ref() {
-                model.contour_detector.set_background(frame.clone());
-            }
-        }
-        _ => (),
-    };
 }
