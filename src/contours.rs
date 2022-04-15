@@ -17,12 +17,12 @@ impl ContourDetector {
         let texture = util::create_texture(
             device,
             [size.x as u32, size.y as u32],
-            wgpu::TextureFormat::R16Float,
+            wgpu::TextureFormat::Rgba16Float,
         );
 
         Self {
             background_subtractor: Box::new(
-                video::create_background_subtractor_knn(500, 400.0, false).unwrap(),
+                video::create_background_subtractor_knn(10, 400.0, false).unwrap(),
             ),
             foreground_mask: None,
             size,

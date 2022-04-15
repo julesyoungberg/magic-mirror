@@ -94,7 +94,8 @@ pub fn upload_mat_to_texture_gray(
 
     let image = image::ImageBuffer::from_fn(width, height, |x, y| {
         let index = (y * width + (width - x - 1)) as usize;
-        image::Luma([frame_data[index] as f32 / 255.0])
+        let luma = frame_data[index] as f32 / 255.0;
+        image::Rgba([luma, luma, luma, 1.0])
     });
 
     let flat_samples = image.as_flat_samples();
