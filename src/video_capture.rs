@@ -192,9 +192,9 @@ impl VideoCapture {
     }
 
     pub fn update_texture(&self, device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder) {
-        if !self.running {
-            return;
-        }
+        // if !self.running {
+        //     return;
+        // }
 
         let frame = match &self.frame {
             Some(f) => f,
@@ -220,13 +220,13 @@ impl VideoCapture {
         self.texture_uploader.finish_upload(device, encoder, &self.video_texture);
     }
 
-    pub fn pause(&mut self) {
-        self.message_channel_tx.send(Message::Pause(())).ok();
-    }
+    // pub fn pause(&mut self) {
+    //     self.message_channel_tx.send(Message::Pause(())).ok();
+    // }
 
-    pub fn unpause(&mut self) {
-        self.message_channel_tx.send(Message::Unpause(())).ok();
-    }
+    // pub fn unpause(&mut self) {
+    //     self.message_channel_tx.send(Message::Unpause(())).ok();
+    // }
 
     pub fn set_speed(&mut self, speed: f32) {
         self.speed = speed;

@@ -69,17 +69,17 @@ impl WebcamCapture {
         }
     }
 
-    pub fn pause(&mut self) {
-        if let Some(video_capture) = &mut self.video_capture {
-            video_capture.pause();
-        }
-    }
+    // pub fn pause(&mut self) {
+    //     if let Some(video_capture) = &mut self.video_capture {
+    //         video_capture.pause();
+    //     }
+    // }
 
-    pub fn unpause(&mut self) {
-        if let Some(video_capture) = &mut self.video_capture {
-            video_capture.unpause();
-        }
-    }
+    // pub fn unpause(&mut self) {
+    //     if let Some(video_capture) = &mut self.video_capture {
+    //         video_capture.unpause();
+    //     }
+    // }
 
     pub fn get_frame_ref(&self) -> Option<&Mat> {
         self.video_capture.as_ref().unwrap().frame.as_ref()

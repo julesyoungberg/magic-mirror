@@ -10,25 +10,26 @@ pub struct ContourDetector {
     foreground_mask: Option<Mat>,
     request_sender: Sender<Mat>,
     response_receiver: Receiver<opencv::types::VectorOfMat>,
-    size: Vec2,
     pub texture: wgpu::Texture,
     worker_thread: std::thread::JoinHandle<()>,
     texture_uploader: texture::TextureUploader,
+    width: i32,
+    height: i32,
 }
 
 impl ContourDetector {
     pub fn new(app: &App, device: &wgpu::Device, size: Vec2) -> Self {
+        let width = size.x as i32; // 650
+        let height = size.y as i32; // 550
+
         let texture = texture::create_texture(
             device,
-            [size.x as u32, size.y as u32],
+            [width as u32, height as u32],
             wgpu::TextureFormat::Rgba16Float,
         );
 
         let (request_sender, request_receiver) = channel::<Mat>();
         let (response_sender, response_receiver) = channel::<opencv::types::VectorOfMat>();
-
-        let width = size.x as i32; // 650
-        let height = size.y as i32; // 550
 
         let texture_uploader = texture::TextureUploader::new(texture::TextureType::Gray, width as u32, height as u32);
 
@@ -90,9 +91,10 @@ impl ContourDetector {
             texture,
             request_sender,
             response_receiver,
-            size,
             worker_thread,
             texture_uploader,
+            width,
+            height,
         }
     }
 
@@ -123,10 +125,7 @@ impl ContourDetector {
             None => return,
         };
 
-        let width = self.size.x as u32;
-        let height = self.size.y as u32;
-
-        texture::upload_mat_gray(device, encoder, frame, &self.texture, width, height);
+        texture::upload_mat_gray(device, encoder, frame, &self.texture, self.width as u32, self.height as u32);
     }
 
     pub fn start_texture_upload(&self) {
