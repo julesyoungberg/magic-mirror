@@ -57,7 +57,7 @@ fn model(app: &App) -> Model {
     let video_texture_reshaper =
         render::create_texture_reshaper(&device, &video_texture, 1, sample_count);
 
-    let contour_detector = ContourDetector::new(&device, video_size);
+    let contour_detector = ContourDetector::new(&app, &device, video_size);
 
     let contour_texture_reshaper =
         render::create_texture_reshaper(&device, &contour_detector.texture, 1, sample_count);
@@ -102,8 +102,8 @@ fn view(app: &App, model: &Model, frame: Frame) {
     {
         let mut encoder = frame.command_encoder();
         model
-            // .video_texture_reshaper
-            .contour_texture_reshaper
+            .video_texture_reshaper
+            // .contour_texture_reshaper
             .encode_render_pass(frame.texture_view(), &mut *encoder);
     }
 
