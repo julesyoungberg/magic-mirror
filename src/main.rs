@@ -76,8 +76,6 @@ fn model(app: &App) -> Model {
     }
 }
 
-// @todo try reversing order of operations
-// update the texture, then pull the next frame and start a parallel process.
 fn update(app: &App, model: &mut Model, _update: Update) {
     let window = app.main_window();
     let device = window.device();
@@ -85,11 +83,16 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     model.webcam_capture.update();
 
     if let Some(frame) = model.webcam_capture.get_frame_ref() {
-        if !model.first_run {
-            model.face_detector.finish_update();
-            model.contour_detector.finish_update();
-        } else {
-            model.first_run = false;
+        // if !model.first_run {
+        //     model.face_detector.finish_update();
+        //     // model.contour_detector.finish_update();
+        // } else {
+        //     model.first_run = false;
+        // }
+
+        if model.face_detector.is_finished() && model.contour_detector.is_finished() {
+            model.contour_detector.start_update(frame);
+            model.face_detector.start_update(frame);
         }
 
         // The encoder we'll use to encode the compute pass and render pass.
@@ -107,8 +110,13 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         window.queue().submit(Some(encoder.finish()));
 
         // start processing frame
-        model.contour_detector.start_update(frame);
-        model.face_detector.start_update(frame);
+        // if model.face_detector.is_finished() && model.contour_detector.is_finished() {
+        //     // model.contour_detector.start_update(frame);
+        //     model.face_detector.start_update(frame);
+        // }
+
+        model.face_detector.finish_update();
+        model.contour_detector.finish_update();
     }
 }
 

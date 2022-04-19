@@ -11,16 +11,18 @@ pub struct ContourDetector {
     request_sender: Sender<Mat>,
     response_receiver: Receiver<opencv::types::VectorOfMat>,
     pub texture: wgpu::Texture,
-    worker_thread: std::thread::JoinHandle<()>,
+    worker_thread: thread::JoinHandle<()>,
     texture_uploader: texture::TextureUploader,
     width: i32,
     height: i32,
+    finished: bool,
 }
 
 impl ContourDetector {
     pub fn new(app: &App, device: &wgpu::Device, size: Vec2) -> Self {
-        let width = size.x as i32; // 650
-        let height = size.y as i32; // 550
+        let width = 650;
+        let scale = width as f32 / size.x;
+        let height = (size.y * scale).round() as i32;
 
         let texture = texture::create_texture(
             device,
@@ -52,16 +54,16 @@ impl ContourDetector {
                     .unwrap();
 
             for frame in request_receiver.iter() {
-                // let mut f = unsafe {
-                //     opencv::core::Mat::new_rows_cols(width, height, opencv::core::CV_8UC1).unwrap()
-                // };
+                let mut f = unsafe {
+                    opencv::core::Mat::new_rows_cols(width, height, opencv::core::CV_8UC1).unwrap()
+                };
 
                 let size = frame.size().unwrap();
 
-                // opencv::imgproc::resize(&frame, &mut f, size, 0.0, 0.0, 0).unwrap();
+                opencv::imgproc::resize(&frame, &mut f, size, 0.0, 0.0, 0).unwrap();
 
                 let blob = opencv::dnn::blob_from_image(
-                    &frame,
+                    &f,
                     1.0,
                     size,
                     opencv::core::VecN::new(0.0, 0.0, 0.0, 0.0),
@@ -95,10 +97,11 @@ impl ContourDetector {
             texture_uploader,
             width,
             height,
+            finished: true,
         }
     }
 
-    pub fn start_update(&self, frame: &Mat) {
+    pub fn start_update(&mut self, frame: &Mat) {
         // let mut foreground_mask = unsafe {
         //     opencv::core::Mat::new_rows_cols(
         //         self.size.x as i32,
@@ -108,6 +111,7 @@ impl ContourDetector {
         //     .unwrap()
         // };
 
+        self.finished = false;
         self.request_sender.send(frame.clone()).unwrap();
 
         // save result
@@ -115,9 +119,17 @@ impl ContourDetector {
     }
 
     pub fn finish_update(&mut self) {
-        let output_blobs = self.response_receiver.recv().unwrap();
+        // let output_blobs = self.response_receiver.recv().unwrap();
+        let output_blobs = match self.response_receiver.try_recv() {
+            Ok(b) => b,
+            Err(_) => return,
+        };
+
+        self.finished = true;
         // println!("detected {:?} objects", output_blobs.len());
     }
+
+    pub fn is_finished(&self) -> bool { self.finished }
 
     pub fn update_texture(&self, device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder) {
         let frame = match &self.foreground_mask {
