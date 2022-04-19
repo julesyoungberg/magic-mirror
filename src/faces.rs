@@ -1,3 +1,6 @@
+use std::sync::mpsc::{channel, Receiver, Sender};
+use std::thread;
+
 use dlib_face_recognition::*;
 use nannou::prelude::*;
 use opencv::prelude::*;
@@ -43,39 +46,58 @@ impl Face {
 }
 
 pub struct FullFaceDetector {
-    face_detector: FaceDetector,
     faces: Vec<Face>,
-    landmark_predictor: LandmarkPredictor,
+    request_sender: Sender<Mat>,
+    response_receiver: Receiver<Vec<Face>>,
+    worker_thread: thread::JoinHandle<()>,
 }
 
 impl FullFaceDetector {
-    pub fn new() -> Self {
+    pub fn new(video_size: Vec2) -> Self {
+        let (request_sender, request_receiver) = channel::<Mat>();
+        let (response_sender, response_receiver) = channel::<Vec<Face>>();
+
+        let worker_thread = thread::spawn(move || {
+            let face_detector = FaceDetector::default();
+            let landmark_predictor = LandmarkPredictor::default();
+
+            for frame in request_receiver.iter() {
+                let ptr = frame.datastart();
+                let matrix = unsafe { ImageMatrix::new(video_size.x as usize, video_size.y as usize, ptr) };
+                let face_locations = face_detector.face_locations(&matrix);
+
+                response_sender.send(face_locations
+                    .iter()
+                    .map(|face| {
+                        let landmarks = landmark_predictor.face_landmarks(&matrix, &face);
+
+                        Face {
+                            position: *face,
+                            landmarks: landmarks
+                                .iter()
+                                .map(|l| Vec2::new(l.x() as f32, l.y() as f32))
+                                .collect(),
+                        }
+                    })
+                    .collect::<Vec<Face>>()
+                ).unwrap();
+            }
+        });
+
         Self {
-            face_detector: FaceDetector::default(),
             faces: vec![],
-            landmark_predictor: LandmarkPredictor::default(),
+            request_sender,
+            response_receiver,
+            worker_thread,
         }
     }
 
-    pub fn update(&mut self, frame: &Mat, video_size: Vec2) {
-        let ptr = frame.datastart();
-        let matrix = unsafe { ImageMatrix::new(video_size.x as usize, video_size.y as usize, ptr) };
-        let face_locations = self.face_detector.face_locations(&matrix);
+    pub fn start_update(&mut self, frame: &Mat) {
+        self.request_sender.send(frame.clone()).unwrap();
+    }
 
-        self.faces = face_locations
-            .iter()
-            .map(|face| {
-                let landmarks = self.landmark_predictor.face_landmarks(&matrix, &face);
-
-                Face {
-                    position: *face,
-                    landmarks: landmarks
-                        .iter()
-                        .map(|l| Vec2::new(l.x() as f32, l.y() as f32))
-                        .collect(),
-                }
-            })
-            .collect();
+    pub fn finish_update(&mut self) {
+        self.faces = self.response_receiver.recv().unwrap();
     }
 
     pub fn draw_faces(&self, draw: &Draw, video_size: &Vec2, draw_size: &Vec2) {
@@ -92,11 +114,5 @@ impl FullFaceDetector {
         for face in &self.faces {
             face.draw(draw, &mapper);
         }
-    }
-}
-
-impl Default for FullFaceDetector {
-    fn default() -> Self {
-        Self::new()
     }
 }

@@ -24,6 +24,7 @@ struct Model {
     video_texture_reshaper: wgpu::TextureReshaper,
     video_size: Vec2,
     webcam_capture: webcam::WebcamCapture,
+    first_run: bool,
 }
 
 const WIDTH: u32 = 1920;
@@ -66,14 +67,17 @@ fn model(app: &App) -> Model {
     Model {
         contour_detector,
         contour_texture_reshaper,
-        face_detector: FullFaceDetector::default(),
+        face_detector: FullFaceDetector::new(video_size),
         size,
         video_texture_reshaper,
         video_size,
         webcam_capture,
+        first_run: true,
     }
 }
 
+// @todo try reversing order of operations
+// update the texture, then pull the next frame and start a parallel process.
 fn update(app: &App, model: &mut Model, _update: Update) {
     let window = app.main_window();
     let device = window.device();
@@ -81,24 +85,31 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     model.webcam_capture.update();
 
     if let Some(frame) = model.webcam_capture.get_frame_ref() {
+        if !model.first_run {
+            model.face_detector.finish_update();
+            model.contour_detector.finish_update();
+        } else {
+            model.first_run = false;
+        }
+
+        // The encoder we'll use to encode the compute pass and render pass.
+        let desc = wgpu::CommandEncoderDescriptor {
+            label: Some("encoder"),
+        };
+        let mut encoder = device.create_command_encoder(&desc);
+
+        // model.contour_detector.update_texture(device, &mut encoder);
+        // model.contour_detector.start_texture_upload();
+        model.webcam_capture.update_texture(device, &mut encoder);
+        // model.contour_detector.finish_texture_upload(device, &mut encoder);
+
+        // submit encoded command buffer
+        window.queue().submit(Some(encoder.finish()));
+
+        // start processing frame
         model.contour_detector.start_update(frame);
-        model.face_detector.update(frame, model.video_size);
-        model.contour_detector.finish_update();
+        model.face_detector.start_update(frame);
     }
-
-    // The encoder we'll use to encode the compute pass and render pass.
-    let desc = wgpu::CommandEncoderDescriptor {
-        label: Some("encoder"),
-    };
-    let mut encoder = device.create_command_encoder(&desc);
-
-    // model.contour_detector.update_texture(device, &mut encoder);
-    // model.contour_detector.start_texture_upload();
-    model.webcam_capture.update_texture(device, &mut encoder);
-    // model.contour_detector.finish_texture_upload(device, &mut encoder);
-
-    // submit encoded command buffer
-    window.queue().submit(Some(encoder.finish()));
 }
 
 fn view(app: &App, model: &Model, frame: Frame) {
