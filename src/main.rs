@@ -1,3 +1,6 @@
+use std::sync::Arc;
+use std::thread;
+
 use nannou::prelude::*;
 
 mod contours;
@@ -80,8 +83,9 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     model.webcam_capture.update();
 
     if let Some(frame) = model.webcam_capture.get_frame_ref() {
+        // model.contour_detector.start_update(frame);
         model.face_detector.update(frame, model.video_size);
-        model.contour_detector.update(frame);
+        // model.contour_detector.finish_update();
     }
 
     // The encoder we'll use to encode the compute pass and render pass.
