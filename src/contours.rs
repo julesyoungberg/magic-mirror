@@ -1,12 +1,10 @@
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 
-use nannou::image;
 use nannou::prelude::*;
 use opencv::prelude::*;
-use opencv::video;
 
-use crate::util;
+use crate::texture;
 
 pub struct ContourDetector {
     foreground_mask: Option<Mat>,
@@ -19,7 +17,7 @@ pub struct ContourDetector {
 
 impl ContourDetector {
     pub fn new(app: &App, device: &wgpu::Device, size: Vec2) -> Self {
-        let texture = util::create_texture(
+        let texture = texture::create_texture(
             device,
             [size.x as u32, size.y as u32],
             wgpu::TextureFormat::Rgba16Float,
@@ -124,6 +122,6 @@ impl ContourDetector {
         let width = self.size.x as u32;
         let height = self.size.y as u32;
 
-        util::upload_mat_to_texture_gray(device, encoder, frame, &self.texture, width, height);
+        texture::upload_mat_gray(device, encoder, frame, &self.texture, width, height);
     }
 }

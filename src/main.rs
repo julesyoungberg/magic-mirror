@@ -1,11 +1,9 @@
-use std::sync::Arc;
-use std::thread;
-
 use nannou::prelude::*;
 
 mod contours;
 mod faces;
 mod render;
+mod texture;
 mod uniforms;
 mod util;
 mod video_capture;

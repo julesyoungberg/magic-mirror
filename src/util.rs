@@ -1,20 +1,6 @@
 use std::fs;
 
-use nannou::image;
 use nannou::prelude::*;
-use opencv::prelude::*;
-
-pub fn create_texture(
-    device: &wgpu::Device,
-    size: [u32; 2],
-    format: wgpu::TextureFormat,
-) -> wgpu::Texture {
-    wgpu::TextureBuilder::new()
-        .size(size)
-        .usage(wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING)
-        .format(format)
-        .build(device)
-}
 
 /// Compiles a shader from the shaders directory
 pub fn compile_shader(
@@ -53,53 +39,4 @@ pub fn floats_as_byte_vec(data: &[f32]) -> Vec<u8> {
     data.iter()
         .for_each(|f| bytes.extend(float_as_bytes(f).iter()));
     bytes
-}
-
-pub fn upload_mat_to_texture_rgb(
-    device: &wgpu::Device,
-    encoder: &mut wgpu::CommandEncoder,
-    frame: &Mat,
-    texture: &wgpu::Texture,
-    width: u32,
-    height: u32,
-) {
-    let frame_data: Vec<Vec<opencv::core::Vec3b>> = frame.to_vec_2d().unwrap();
-
-    let image = image::ImageBuffer::from_fn(width, height, |x, y| {
-        let pixel = frame_data[y as usize][(width - x - 1) as usize];
-        // convert from BGR to RGB
-        image::Rgba([
-            pixel[2] as f32 / 255.0,
-            pixel[1] as f32 / 255.0,
-            pixel[0] as f32 / 255.0,
-            1.0,
-        ])
-    });
-
-    let flat_samples = image.as_flat_samples();
-    let byte_vec = floats_as_byte_vec(flat_samples.as_slice());
-
-    texture.upload_data(device, encoder, &byte_vec);
-}
-
-pub fn upload_mat_to_texture_gray(
-    device: &wgpu::Device,
-    encoder: &mut wgpu::CommandEncoder,
-    frame: &Mat,
-    texture: &wgpu::Texture,
-    width: u32,
-    height: u32,
-) {
-    let frame_data: &[u8] = frame.data_bytes().unwrap();
-
-    let image = image::ImageBuffer::from_fn(width, height, |x, y| {
-        let index = (y * width + (width - x - 1)) as usize;
-        let luma = frame_data[index] as f32 / 255.0;
-        image::Rgba([luma, luma, luma, 1.0])
-    });
-
-    let flat_samples = image.as_flat_samples();
-    let byte_vec = floats_as_byte_vec(flat_samples.as_slice());
-
-    texture.upload_data(device, encoder, &byte_vec);
 }

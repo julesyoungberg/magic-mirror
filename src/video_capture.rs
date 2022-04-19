@@ -1,4 +1,3 @@
-use nannou::image;
 use nannou::prelude::*;
 use opencv::prelude::*;
 use ringbuf::{Consumer, RingBuffer};
@@ -7,7 +6,7 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use std::time::SystemTime;
 use std::{thread, time};
 
-use crate::util;
+use crate::texture;
 
 const FRAME_RATE: f64 = 30.0;
 
@@ -59,7 +58,7 @@ impl VideoCapture {
         }
 
         // create video texture
-        let video_texture = util::create_texture(
+        let video_texture = texture::create_texture(
             device,
             [width as u32, height as u32],
             wgpu::TextureFormat::Rgba16Float,
@@ -201,7 +200,7 @@ impl VideoCapture {
         let width = self.video_size.x as u32;
         let height = self.video_size.y as u32;
 
-        util::upload_mat_to_texture_rgb(device, encoder, frame, &self.video_texture, width, height);
+        texture::upload_mat_rgb(device, encoder, frame, &self.video_texture, width, height);
     }
 
     pub fn pause(&mut self) {
