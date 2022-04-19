@@ -57,6 +57,18 @@ impl WebcamCapture {
         }
     }
 
+    pub fn start_texture_upload(&self) {
+        if let Some(video_capture) = &self.video_capture {
+            video_capture.start_texture_upload();
+        }
+    }
+
+    pub fn finish_texture_upload(&self, device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder) {
+        if let Some(video_capture) = &self.video_capture {
+            video_capture.finish_texture_upload(device, encoder);
+        }
+    }
+
     pub fn pause(&mut self) {
         if let Some(video_capture) = &mut self.video_capture {
             video_capture.pause();

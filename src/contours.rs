@@ -13,6 +13,7 @@ pub struct ContourDetector {
     size: Vec2,
     pub texture: wgpu::Texture,
     worker_thread: std::thread::JoinHandle<()>,
+    texture_uploader: texture::TextureUploader,
 }
 
 impl ContourDetector {
@@ -28,6 +29,8 @@ impl ContourDetector {
 
         let width = size.x as i32; // 650
         let height = size.y as i32; // 550
+
+        let texture_uploader = texture::TextureUploader::new(texture::TextureType::Gray, width as u32, height as u32);
 
         let project_path = app.project_path();
 
@@ -89,6 +92,7 @@ impl ContourDetector {
             response_receiver,
             size,
             worker_thread,
+            texture_uploader,
         }
     }
 
@@ -123,5 +127,18 @@ impl ContourDetector {
         let height = self.size.y as u32;
 
         texture::upload_mat_gray(device, encoder, frame, &self.texture, width, height);
+    }
+
+    pub fn start_texture_upload(&self) {
+        let frame = match &self.foreground_mask {
+            Some(s) => s,
+            None => return,
+        };
+
+        self.texture_uploader.start_upload(frame);
+    }
+
+    pub fn finish_texture_upload(&self, device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder) {
+        self.texture_uploader.finish_upload(device, encoder, &self.texture);
     }
 }

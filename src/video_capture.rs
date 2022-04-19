@@ -40,6 +40,7 @@ pub struct VideoCapture {
     message_channel_tx: Sender<Message>,
     error_channel_rx: Receiver<String>,
     video_consumer: VideoConsumer,
+    texture_uploader: texture::TextureUploader,
 }
 
 impl VideoCapture {
@@ -56,6 +57,8 @@ impl VideoCapture {
         if let Ok(fr) = capture.get(opencv::videoio::CAP_PROP_FPS) {
             frame_rate = fr;
         }
+
+        let texture_uploader = texture::TextureUploader::new(texture::TextureType::Rgb, width as u32, height as u32);
 
         // create video texture
         let video_texture = texture::create_texture(
@@ -155,6 +158,7 @@ impl VideoCapture {
             },
             video_size,
             video_texture,
+            texture_uploader,
         }
     }
 
@@ -201,6 +205,19 @@ impl VideoCapture {
         let height = self.video_size.y as u32;
 
         texture::upload_mat_rgb(device, encoder, frame, &self.video_texture, width, height);
+    }
+
+    pub fn start_texture_upload(&self) {
+        let frame = match &self.frame {
+            Some(f) => f,
+            None => return,
+        };
+
+        self.texture_uploader.start_upload(frame);
+    }
+
+    pub fn finish_texture_upload(&self, device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder) {
+        self.texture_uploader.finish_upload(device, encoder, &self.video_texture);
     }
 
     pub fn pause(&mut self) {

@@ -81,9 +81,9 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     model.webcam_capture.update();
 
     if let Some(frame) = model.webcam_capture.get_frame_ref() {
-        // model.contour_detector.start_update(frame);
+        model.contour_detector.start_update(frame);
         model.face_detector.update(frame, model.video_size);
-        // model.contour_detector.finish_update();
+        model.contour_detector.finish_update();
     }
 
     // The encoder we'll use to encode the compute pass and render pass.
@@ -92,8 +92,10 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     };
     let mut encoder = device.create_command_encoder(&desc);
 
+    // model.contour_detector.update_texture(device, &mut encoder);
+    // model.contour_detector.start_texture_upload();
     model.webcam_capture.update_texture(device, &mut encoder);
-    model.contour_detector.update_texture(device, &mut encoder);
+    // model.contour_detector.finish_texture_upload(device, &mut encoder);
 
     // submit encoded command buffer
     window.queue().submit(Some(encoder.finish()));

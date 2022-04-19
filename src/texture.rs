@@ -12,6 +12,7 @@ pub enum TextureType {
     Gray,
 }
 
+#[derive(Debug)]
 pub struct TextureUploader {
     request_sender: Sender<Mat>,
     response_receiver: Receiver<Vec<u8>>,
