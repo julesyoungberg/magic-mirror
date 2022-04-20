@@ -90,9 +90,12 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         //     model.first_run = false;
         // }
 
-        if model.face_detector.is_finished() && model.contour_detector.is_finished() {
-            model.contour_detector.start_update(frame);
+        if model.face_detector.is_finished() {
             model.face_detector.start_update(frame);
+        }
+
+        if model.contour_detector.is_finished() {
+            model.contour_detector.start_update(frame);
         }
 
         // The encoder we'll use to encode the compute pass and render pass.
