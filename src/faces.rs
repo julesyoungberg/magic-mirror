@@ -64,24 +64,28 @@ impl FullFaceDetector {
 
             for frame in request_receiver.iter() {
                 let ptr = frame.datastart();
-                let matrix = unsafe { ImageMatrix::new(video_size.x as usize, video_size.y as usize, ptr) };
+                let matrix =
+                    unsafe { ImageMatrix::new(video_size.x as usize, video_size.y as usize, ptr) };
                 let face_locations = face_detector.face_locations(&matrix);
 
-                response_sender.send(face_locations
-                    .iter()
-                    .map(|face| {
-                        let landmarks = landmark_predictor.face_landmarks(&matrix, &face);
+                response_sender
+                    .send(
+                        face_locations
+                            .iter()
+                            .map(|face| {
+                                let landmarks = landmark_predictor.face_landmarks(&matrix, &face);
 
-                        Face {
-                            position: *face,
-                            landmarks: landmarks
-                                .iter()
-                                .map(|l| Vec2::new(l.x() as f32, l.y() as f32))
-                                .collect(),
-                        }
-                    })
-                    .collect::<Vec<Face>>()
-                ).unwrap();
+                                Face {
+                                    position: *face,
+                                    landmarks: landmarks
+                                        .iter()
+                                        .map(|l| Vec2::new(l.x() as f32, l.y() as f32))
+                                        .collect(),
+                                }
+                            })
+                            .collect::<Vec<Face>>(),
+                    )
+                    .unwrap();
             }
         });
 
@@ -109,7 +113,9 @@ impl FullFaceDetector {
         self.finished = true;
     }
 
-    pub fn is_finished(&self) -> bool { self.finished }
+    pub fn is_finished(&self) -> bool {
+        self.finished
+    }
 
     pub fn draw_faces(&self, draw: &Draw, video_size: &Vec2, draw_size: &Vec2) {
         let hwidth = draw_size.x * 0.5;

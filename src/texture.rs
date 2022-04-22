@@ -73,7 +73,12 @@ impl TextureUploader {
         self.request_sender.send(frame.clone()).unwrap();
     }
 
-    pub fn finish_upload(&self, device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder, texture: &wgpu::Texture) {
+    pub fn finish_upload(
+        &self,
+        device: &wgpu::Device,
+        encoder: &mut wgpu::CommandEncoder,
+        texture: &wgpu::Texture,
+    ) {
         let bytes = self.response_receiver.recv().unwrap();
         texture.upload_data(device, encoder, &bytes);
     }

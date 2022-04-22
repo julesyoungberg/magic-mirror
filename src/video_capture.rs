@@ -58,7 +58,8 @@ impl VideoCapture {
             frame_rate = fr;
         }
 
-        let texture_uploader = texture::TextureUploader::new(texture::TextureType::Rgb, width as u32, height as u32);
+        let texture_uploader =
+            texture::TextureUploader::new(texture::TextureType::Rgb, width as u32, height as u32);
 
         // create video texture
         let video_texture = texture::create_texture(
@@ -217,7 +218,8 @@ impl VideoCapture {
     }
 
     pub fn finish_texture_upload(&self, device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder) {
-        self.texture_uploader.finish_upload(device, encoder, &self.video_texture);
+        self.texture_uploader
+            .finish_upload(device, encoder, &self.video_texture);
     }
 
     // pub fn pause(&mut self) {

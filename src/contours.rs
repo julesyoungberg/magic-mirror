@@ -44,7 +44,8 @@ impl ContourDetector {
         let (request_sender, request_receiver) = channel::<Mat>();
         let (response_sender, response_receiver) = channel::<Vec<Object>>();
 
-        let texture_uploader = texture::TextureUploader::new(texture::TextureType::Gray, width as u32, height as u32);
+        let texture_uploader =
+            texture::TextureUploader::new(texture::TextureType::Gray, width as u32, height as u32);
 
         let project_path = app.project_path();
 
@@ -109,7 +110,9 @@ impl ContourDetector {
                 let num_classes = masks_size[1];
                 println!("num classes: {:?}", num_classes);
 
-                out_detections = out_detections.reshape(1, out_detections.total() as i32 / 7).unwrap();
+                out_detections = out_detections
+                    .reshape(1, out_detections.total() as i32 / 7)
+                    .unwrap();
 
                 let objects = vec![];
 
@@ -125,12 +128,21 @@ impl ContourDetector {
 
                     let left = (width as f32 * *out_detections.at_2d::<f32>(i, 3).unwrap()) / scale;
                     let top = (height as f32 * *out_detections.at_2d::<f32>(i, 4).unwrap()) / scale;
-                    let right = (width as f32 * *out_detections.at_2d::<f32>(i, 5).unwrap()) / scale;
-                    let bottom = (height as f32 * *out_detections.at_2d::<f32>(i, 6).unwrap()) / scale;
+                    let right =
+                        (width as f32 * *out_detections.at_2d::<f32>(i, 5).unwrap()) / scale;
+                    let bottom =
+                        (height as f32 * *out_detections.at_2d::<f32>(i, 6).unwrap()) / scale;
 
                     // println!("left: {:?}, top: {:?}, right: {:?}, bottom: {:?}", left, top, right, bottom);
 
-                    let object_mask = Mat::new_rows_cols_with_data(masks_size[2], masks_size[3], CV_32F, out_masks.ptr_2d(i, class_id), AUTO_STEP);
+                    let object_mask = Mat::new_rows_cols_with_data(
+                        masks_size[2],
+                        masks_size[3],
+                        opencv::core::CV_32F,
+                        out_masks.ptr_2d(i, class_id).unwrap(),
+                        AUTO_STEP,
+                    )
+                    .unwrap();
 
                     objects.push(Object {
                         class_id,
@@ -187,7 +199,9 @@ impl ContourDetector {
         // println!("detected {:?} objects", output_blobs.len());
     }
 
-    pub fn is_finished(&self) -> bool { self.finished }
+    pub fn is_finished(&self) -> bool {
+        self.finished
+    }
 
     pub fn update_texture(&self, device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder) {
         let frame = match &self.foreground_mask {
@@ -195,7 +209,14 @@ impl ContourDetector {
             None => return,
         };
 
-        texture::upload_mat_gray(device, encoder, frame, &self.texture, self.width as u32, self.height as u32);
+        texture::upload_mat_gray(
+            device,
+            encoder,
+            frame,
+            &self.texture,
+            self.width as u32,
+            self.height as u32,
+        );
     }
 
     pub fn start_texture_upload(&self) {
@@ -208,6 +229,7 @@ impl ContourDetector {
     }
 
     pub fn finish_texture_upload(&self, device: &wgpu::Device, encoder: &mut wgpu::CommandEncoder) {
-        self.texture_uploader.finish_upload(device, encoder, &self.texture);
+        self.texture_uploader
+            .finish_upload(device, encoder, &self.texture);
     }
 }
