@@ -100,21 +100,21 @@ impl ContourDetector {
 
                 // postprocess
                 let mut out_detections = output_blobs.get(0).unwrap();
-                let out_masks = output_blobs.get(1).unwrap();
+                let mut out_masks = output_blobs.get(1).unwrap();
 
                 let detections_size = out_detections.mat_size();
                 let num_detections = detections_size[2];
-                println!("num detections: {:?}", num_detections);
+                // println!("num detections: {:?}", num_detections);
 
                 let masks_size = out_masks.mat_size();
                 let num_classes = masks_size[1];
-                println!("num classes: {:?}", num_classes);
+                // println!("num classes: {:?}", num_classes);
 
                 out_detections = out_detections
                     .reshape(1, out_detections.total() as i32 / 7)
                     .unwrap();
 
-                let objects = vec![];
+                let mut objects = vec![];
 
                 for i in 0..num_detections {
                     let score: f32 = *out_detections.at_2d(i, 2).unwrap();
@@ -135,14 +135,18 @@ impl ContourDetector {
 
                     // println!("left: {:?}, top: {:?}, right: {:?}, bottom: {:?}", left, top, right, bottom);
 
-                    let object_mask = Mat::new_rows_cols_with_data(
-                        masks_size[2],
-                        masks_size[3],
-                        opencv::core::CV_32F,
-                        out_masks.ptr_2d(i, class_id).unwrap(),
-                        AUTO_STEP,
-                    )
-                    .unwrap();
+                    let mut mask_data = out_masks.ptr_2d_mut(i, class_id).unwrap();
+
+                    let mut object_mask = unsafe {
+                        Mat::new_rows_cols(
+                            masks_size[2],
+                            masks_size[3],
+                            opencv::core::CV_32F,
+                        )
+                        .unwrap()
+                    };
+
+                    unsafe { object_mask.set_data(mask_data); };
 
                     objects.push(Object {
                         class_id,
