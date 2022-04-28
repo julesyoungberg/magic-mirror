@@ -148,6 +148,8 @@ impl ContourDetector {
 
                     unsafe { object_mask.set_data(mask_data); };
 
+                    // let mut countours_output = opencv::types::VectorOfMat::new();
+                    
                     objects.push(Object {
                         class_id,
                         left,
@@ -198,6 +200,12 @@ impl ContourDetector {
             Ok(b) => b,
             Err(_) => return,
         };
+
+        if !detected_objects.is_empty() {
+            self.foreground_mask = Some(detected_objects[0].mask.clone())
+        } else {
+            self.foreground_mask = None;
+        }
 
         self.finished = true;
         // println!("detected {:?} objects", output_blobs.len());

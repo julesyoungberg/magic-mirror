@@ -104,7 +104,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         };
         let mut encoder = device.create_command_encoder(&desc);
 
-        // model.contour_detector.update_texture(device, &mut encoder);
+        model.contour_detector.update_texture(device, &mut encoder);
         // model.contour_detector.start_texture_upload();
         model.webcam_capture.update_texture(device, &mut encoder);
         // model.contour_detector.finish_texture_upload(device, &mut encoder);
@@ -128,8 +128,8 @@ fn view(app: &App, model: &Model, frame: Frame) {
     {
         let mut encoder = frame.command_encoder();
         model
-            .video_texture_reshaper
-            // .contour_texture_reshaper
+            // .video_texture_reshaper
+            .contour_texture_reshaper
             .encode_render_pass(frame.texture_view(), &mut *encoder);
     }
 
