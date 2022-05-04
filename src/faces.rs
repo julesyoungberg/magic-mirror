@@ -2,6 +2,7 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 
 use dlib_face_recognition::*;
+use mediapipe;
 use nannou::prelude::*;
 use opencv::prelude::*;
 
@@ -59,33 +60,73 @@ impl FullFaceDetector {
         let (response_sender, response_receiver) = channel::<Vec<Face>>();
 
         let worker_thread = thread::spawn(move || {
-            let face_detector = FaceDetector::default();
-            let landmark_predictor = LandmarkPredictor::default();
+            // let face_detector = FaceDetector::default();
+            // let landmark_predictor = LandmarkPredictor::default();
+
+            let mut mesh = mediapipe::FaceMesh::default();
+            let mut detector = mediapipe::face_mesh::FaceMeshDetector::default();
+
+            let mut rgb_frame = unsafe {
+                opencv::core::Mat::new_rows_cols(
+                    video_size.x.round() as i32,
+                    video_size.y.round() as i32,
+                    opencv::core::CV_8UC3,
+                )
+                .unwrap()
+            };
+
+            let mut flip_frame = unsafe {
+                opencv::core::Mat::new_rows_cols(
+                    video_size.x.round() as i32,
+                    video_size.y.round() as i32,
+                    opencv::core::CV_8UC3,
+                )
+                .unwrap()
+            };
 
             for frame in request_receiver.iter() {
-                let ptr = frame.datastart();
-                let matrix =
-                    unsafe { ImageMatrix::new(video_size.x as usize, video_size.y as usize, ptr) };
-                let face_locations = face_detector.face_locations(&matrix);
+                //     let ptr = frame.datastart();
+                //     let matrix =
+                //         unsafe { ImageMatrix::new(video_size.x as usize, video_size.y as usize, ptr) };
+                //     let face_locations = face_detector.face_locations(&matrix);
 
-                response_sender
-                    .send(
-                        face_locations
-                            .iter()
-                            .map(|face| {
-                                let landmarks = landmark_predictor.face_landmarks(&matrix, &face);
+                //     response_sender
+                //         .send(
+                //             face_locations
+                //                 .iter()
+                //                 .map(|face| {
+                //                     let landmarks = landmark_predictor.face_landmarks(&matrix, &face);
 
-                                Face {
-                                    position: *face,
-                                    landmarks: landmarks
-                                        .iter()
-                                        .map(|l| Vec2::new(l.x() as f32, l.y() as f32))
-                                        .collect(),
-                                }
-                            })
-                            .collect::<Vec<Face>>(),
-                    )
-                    .unwrap();
+                //                     Face {
+                //                         position: *face,
+                //                         landmarks: landmarks
+                //                             .iter()
+                //                             .map(|l| Vec2::new(l.x() as f32, l.y() as f32))
+                //                             .collect(),
+                //                     }
+                //                 })
+                //                 .collect::<Vec<Face>>(),
+                //         )
+                //         .unwrap();
+                // }
+
+                opencv::imgproc::cvt_color(
+                    &frame,
+                    &mut rgb_frame,
+                    opencv::imgproc::COLOR_BGR2RGB,
+                    0,
+                )
+                .unwrap();
+                opencv::core::flip(&rgb_frame, &mut flip_frame, 1).unwrap(); // horizontal
+
+                detector.process(&flip_frame, &mut mesh);
+
+                println!(
+                    "LANDMARK: {} {} {}",
+                    mesh.data[0].x, mesh.data[0].y, mesh.data[0].z
+                );
+
+                response_sender.send(vec![]).unwrap();
             }
         });
 
