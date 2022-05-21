@@ -94,9 +94,9 @@ fn update(app: &App, model: &mut Model, _update: Update) {
             model.face_detector.start_update(frame);
         }
 
-        if model.contour_detector.is_finished() {
-            model.contour_detector.start_update(frame);
-        }
+        // if model.contour_detector.is_finished() {
+        //     model.contour_detector.start_update(frame);
+        // }
 
         // The encoder we'll use to encode the compute pass and render pass.
         let desc = wgpu::CommandEncoderDescriptor {
@@ -104,7 +104,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         };
         let mut encoder = device.create_command_encoder(&desc);
 
-        model.contour_detector.update_texture(device, &mut encoder);
+        // model.contour_detector.update_texture(device, &mut encoder);
         // model.contour_detector.start_texture_upload();
         model.webcam_capture.update_texture(device, &mut encoder);
         // model.contour_detector.finish_texture_upload(device, &mut encoder);
@@ -119,7 +119,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         // }
 
         model.face_detector.finish_update();
-        model.contour_detector.finish_update();
+        // model.contour_detector.finish_update();
     }
 }
 
@@ -133,11 +133,11 @@ fn view(app: &App, model: &Model, frame: Frame) {
             .encode_render_pass(frame.texture_view(), &mut *encoder);
     }
 
-    let draw = app.draw();
+    // let draw = app.draw();
 
-    model
-        .face_detector
-        .draw_faces(&draw, &model.video_size, &model.size);
+    // model
+    //     .face_detector
+    //     .draw_faces(&draw, &model.video_size, &model.size);
 
-    draw.to_frame(app, &frame).unwrap();
+    // draw.to_frame(app, &frame).unwrap();
 }

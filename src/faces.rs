@@ -1,55 +1,54 @@
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 
-use dlib_face_recognition::*;
 use mediapipe;
 use nannou::prelude::*;
 use opencv::prelude::*;
 
 use crate::util;
 
-#[derive(Clone, Debug)]
-pub struct Face {
-    pub position: Rectangle,
-    pub landmarks: Vec<Vec2>,
-}
+// #[derive(Clone, Debug)]
+// pub struct Face {
+//     pub position: Rectangle,
+//     pub landmarks: Vec<Vec2>,
+// }
 
-impl Face {
-    pub fn border_rect(&self) -> Vec<Vec2> {
-        vec![
-            Vec2::new(self.position.left as f32, self.position.top as f32),
-            Vec2::new(self.position.right as f32, self.position.top as f32),
-            Vec2::new(self.position.right as f32, self.position.bottom as f32),
-            Vec2::new(self.position.left as f32, self.position.bottom as f32),
-        ]
-    }
+// impl Face {
+//     pub fn border_rect(&self) -> Vec<Vec2> {
+//         vec![
+//             Vec2::new(self.position.left as f32, self.position.top as f32),
+//             Vec2::new(self.position.right as f32, self.position.top as f32),
+//             Vec2::new(self.position.right as f32, self.position.bottom as f32),
+//             Vec2::new(self.position.left as f32, self.position.bottom as f32),
+//         ]
+//     }
 
-    pub fn draw(&self, draw: &Draw, mapper: &impl Fn(&Vec2) -> Vec2) {
-        let mut face_rect: Vec<Vec2> = self.border_rect().iter().map(mapper).collect();
+//     pub fn draw(&self, draw: &Draw, mapper: &impl Fn(&Vec2) -> Vec2) {
+//         let mut face_rect: Vec<Vec2> = self.border_rect().iter().map(mapper).collect();
 
-        face_rect.push(face_rect[0].clone());
+//         face_rect.push(face_rect[0].clone());
 
-        draw.path()
-            .stroke()
-            .color(STEELBLUE)
-            .weight(3.0)
-            .points(face_rect);
+//         draw.path()
+//             .stroke()
+//             .color(STEELBLUE)
+//             .weight(3.0)
+//             .points(face_rect);
 
-        for landmark in &self.landmarks {
-            let mapped = mapper(landmark);
-            draw.ellipse()
-                .color(STEELBLUE)
-                .w(10.0)
-                .h(10.0)
-                .x_y(mapped.x, mapped.y);
-        }
-    }
-}
+//         for landmark in &self.landmarks {
+//             let mapped = mapper(landmark);
+//             draw.ellipse()
+//                 .color(STEELBLUE)
+//                 .w(10.0)
+//                 .h(10.0)
+//                 .x_y(mapped.x, mapped.y);
+//         }
+//     }
+// }
 
 pub struct FullFaceDetector {
-    faces: Vec<Face>,
+    faces: Vec<f32>,
     request_sender: Sender<Mat>,
-    response_receiver: Receiver<Vec<Face>>,
+    response_receiver: Receiver<Vec<f32>>,
     worker_thread: thread::JoinHandle<()>,
     finished: bool,
 }
@@ -57,7 +56,7 @@ pub struct FullFaceDetector {
 impl FullFaceDetector {
     pub fn new(video_size: Vec2) -> Self {
         let (request_sender, request_receiver) = channel::<Mat>();
-        let (response_sender, response_receiver) = channel::<Vec<Face>>();
+        let (response_sender, response_receiver) = channel::<Vec<f32>>();
 
         let worker_thread = thread::spawn(move || {
             // let face_detector = FaceDetector::default();
@@ -158,19 +157,19 @@ impl FullFaceDetector {
         self.finished
     }
 
-    pub fn draw_faces(&self, draw: &Draw, video_size: &Vec2, draw_size: &Vec2) {
-        let hwidth = draw_size.x * 0.5;
-        let hheight = draw_size.y * 0.5;
+    // pub fn draw_faces(&self, draw: &Draw, video_size: &Vec2, draw_size: &Vec2) {
+    //     let hwidth = draw_size.x * 0.5;
+    //     let hheight = draw_size.y * 0.5;
 
-        let mapper = |input: &Vec2| {
-            Vec2::new(
-                util::map(input.x, 0.0, video_size.x, hwidth, -hwidth) * 0.5,
-                util::map(input.y, 0.0, video_size.y, hheight, -hheight) * 0.5,
-            )
-        };
+    //     let mapper = |input: &Vec2| {
+    //         Vec2::new(
+    //             util::map(input.x, 0.0, video_size.x, hwidth, -hwidth) * 0.5,
+    //             util::map(input.y, 0.0, video_size.y, hheight, -hheight) * 0.5,
+    //         )
+    //     };
 
-        for face in &self.faces {
-            face.draw(draw, &mapper);
-        }
-    }
+    //     for face in &self.faces {
+    //         face.draw(draw, &mapper);
+    //     }
+    // }
 }
