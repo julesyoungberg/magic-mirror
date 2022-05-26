@@ -205,6 +205,7 @@ impl VideoCapture {
         let width = self.video_size.x as u32;
         let height = self.video_size.y as u32;
 
+        println!("uploading texture");
         texture::upload_mat_rgb(device, encoder, frame, &self.video_texture, width, height);
     }
 

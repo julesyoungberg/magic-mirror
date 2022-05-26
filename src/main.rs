@@ -64,6 +64,7 @@ fn model(app: &App) -> Model {
     let contour_texture_reshaper =
         render::create_texture_reshaper(&device, &contour_detector.texture, 1, sample_count);
 
+    println!("creating model");
     Model {
         contour_detector,
         contour_texture_reshaper,
@@ -77,12 +78,14 @@ fn model(app: &App) -> Model {
 }
 
 fn update(app: &App, model: &mut Model, _update: Update) {
+    println!("update");
     let window = app.main_window();
     let device = window.device();
 
     model.webcam_capture.update();
 
     if let Some(frame) = model.webcam_capture.get_frame_ref() {
+        println!("got frame");
         // if !model.first_run {
         //     model.face_detector.finish_update();
         //     // model.contour_detector.finish_update();
@@ -90,9 +93,11 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         //     model.first_run = false;
         // }
 
-        if model.face_detector.is_finished() {
-            model.face_detector.start_update(frame);
-        }
+        // println!("updating face detector");
+        // model.face_detector.start_update(frame);
+        // println!("updating...");
+        // model.face_detector.finish_update();
+        // println!("updated");
 
         // if model.contour_detector.is_finished() {
         //     model.contour_detector.start_update(frame);
@@ -106,10 +111,12 @@ fn update(app: &App, model: &mut Model, _update: Update) {
 
         // model.contour_detector.update_texture(device, &mut encoder);
         // model.contour_detector.start_texture_upload();
+        println!("updating texture");
         model.webcam_capture.update_texture(device, &mut encoder);
         // model.contour_detector.finish_texture_upload(device, &mut encoder);
 
         // submit encoded command buffer
+        println!("submitting command buffer");
         window.queue().submit(Some(encoder.finish()));
 
         // start processing frame
@@ -118,7 +125,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         //     model.face_detector.start_update(frame);
         // }
 
-        model.face_detector.finish_update();
+        // model.face_detector.finish_update();
         // model.contour_detector.finish_update();
     }
 }
