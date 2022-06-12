@@ -2303,7 +2303,7 @@ checksum = "8ccb82d61f80a663efe1f787a51b16b5a51e3314d6ac365b08639f52387b33f3"
 [[package]]
 name = "ux-mediapipe"
 version = "0.1.0"
-source = "git+https://github.com/julesyoungberg/ux-mediapipe#0048ea7fa43d7b529b764bf720879b70e786cf0e"
+source = "git+https://github.com/julesyoungberg/ux-mediapipe?rev=3aff0ea5fa068e94e4352f64178da6bcd5d49cf6#3aff0ea5fa068e94e4352f64178da6bcd5d49cf6"
 dependencies = [
  "bindgen",
  "cgmath",

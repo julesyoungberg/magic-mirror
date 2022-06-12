@@ -135,14 +135,14 @@ impl VideoCapture {
                     }
                 }
 
-                let frame_dur = 1.0_f64 / (frame_rate * video_speed);
-                let elapsed = clock.elapsed().unwrap().as_secs_f64() - start_time;
-                let extra_time = frame_dur - elapsed;
-                if extra_time > 0.01 {
-                    thread::sleep(time::Duration::from_millis(
-                        ((extra_time - 0.01) * 1000.0) as u64,
-                    ));
-                }
+                // let frame_dur = 1.0_f64 / (frame_rate * video_speed);
+                // let elapsed = clock.elapsed().unwrap().as_secs_f64() - start_time;
+                // let extra_time = frame_dur - elapsed;
+                // if extra_time > 0.01 {
+                //     thread::sleep(time::Duration::from_millis(
+                //         ((extra_time - 0.01) * 1000.0) as u64,
+                //     ));
+                // }
             }
         });
 
@@ -205,7 +205,7 @@ impl VideoCapture {
         let width = self.video_size.x as u32;
         let height = self.video_size.y as u32;
 
-        println!("uploading texture");
+        // println!("uploading texture");
         texture::upload_mat_rgb(device, encoder, frame, &self.video_texture, width, height);
     }
 

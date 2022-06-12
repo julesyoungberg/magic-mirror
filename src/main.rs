@@ -78,14 +78,14 @@ fn model(app: &App) -> Model {
 }
 
 fn update(app: &App, model: &mut Model, _update: Update) {
-    println!("update");
+    // println!("update");
     let window = app.main_window();
     let device = window.device();
 
     model.webcam_capture.update();
 
     if let Some(frame) = model.webcam_capture.get_frame_ref() {
-        println!("got frame");
+        // println!("got frame");
         // if !model.first_run {
         //     model.face_detector.finish_update();
         //     // model.contour_detector.finish_update();
@@ -93,11 +93,15 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         //     model.first_run = false;
         // }
 
-        // println!("updating face detector");
-        // model.face_detector.start_update(frame);
+        if !model.face_detector.is_finished() {
+            model.face_detector.finish_update();
+        }
+        if model.face_detector.is_finished() {
+            // println!("updating face detector");
+            model.face_detector.start_update(frame);
+        }
         // println!("updating...");
-        // model.face_detector.finish_update();
-        // println!("updated");
+        model.face_detector.finish_update();
 
         // if model.contour_detector.is_finished() {
         //     model.contour_detector.start_update(frame);
@@ -111,12 +115,12 @@ fn update(app: &App, model: &mut Model, _update: Update) {
 
         // model.contour_detector.update_texture(device, &mut encoder);
         // model.contour_detector.start_texture_upload();
-        println!("updating texture");
+        // println!("updating texture");
         model.webcam_capture.update_texture(device, &mut encoder);
         // model.contour_detector.finish_texture_upload(device, &mut encoder);
 
         // submit encoded command buffer
-        println!("submitting command buffer");
+        // println!("submitting command buffer");
         window.queue().submit(Some(encoder.finish()));
 
         // start processing frame
@@ -135,16 +139,16 @@ fn view(app: &App, model: &Model, frame: Frame) {
     {
         let mut encoder = frame.command_encoder();
         model
-            // .video_texture_reshaper
-            .contour_texture_reshaper
+            .video_texture_reshaper
+            // .contour_texture_reshaper
             .encode_render_pass(frame.texture_view(), &mut *encoder);
     }
 
-    // let draw = app.draw();
+    let draw = app.draw();
 
-    // model
-    //     .face_detector
-    //     .draw_faces(&draw, &model.video_size, &model.size);
+    model
+        .face_detector
+        .draw_faces(&draw, &model.video_size, &model.size);
 
-    // draw.to_frame(app, &frame).unwrap();
+    draw.to_frame(app, &frame).unwrap();
 }
