@@ -1186,12 +1186,12 @@ name = "magic-mirror"
 version = "0.1.0"
 dependencies = [
  "half",
+ "mediapipe",
  "nannou",
  "opencv",
  "regex",
  "ringbuf",
  "shaderc",
- "ux-mediapipe",
 ]
 
 [[package]]
@@ -1214,6 +1214,18 @@ name = "maybe-uninit"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "60302e4db3a61da70c0cb7991976248362f30319e88850c487b9b95bbf059e00"
+
+[[package]]
+name = "mediapipe"
+version = "0.1.0"
+source = "git+https://github.com/julesyoungberg/mediapipe-rs?rev=18223e924ce0d3d1bb6d16ae39875d69cd383f27#18223e924ce0d3d1bb6d16ae39875d69cd383f27"
+dependencies = [
+ "bindgen",
+ "cgmath",
+ "libc",
+ "opencv",
+ "protobuf",
+]
 
 [[package]]
 name = "memchr"
@@ -2299,18 +2311,6 @@ name = "unicode-xid"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ccb82d61f80a663efe1f787a51b16b5a51e3314d6ac365b08639f52387b33f3"
-
-[[package]]
-name = "ux-mediapipe"
-version = "0.1.0"
-source = "git+https://github.com/julesyoungberg/ux-mediapipe?rev=3aff0ea5fa068e94e4352f64178da6bcd5d49cf6#3aff0ea5fa068e94e4352f64178da6bcd5d49cf6"
-dependencies = [
- "bindgen",
- "cgmath",
- "libc",
- "opencv",
- "protobuf",
-]
 
 [[package]]
 name = "vcpkg"

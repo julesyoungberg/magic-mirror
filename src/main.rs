@@ -3,6 +3,7 @@ use nannou::prelude::*;
 mod contours;
 mod faces;
 mod render;
+mod segmentation;
 mod texture;
 mod uniforms;
 mod util;
@@ -11,6 +12,7 @@ mod webcam;
 
 use crate::contours::*;
 use crate::faces::*;
+use crate::segmentation::*;
 
 fn main() {
     nannou::app(model).update(update).run();
@@ -24,7 +26,7 @@ struct Model {
     video_texture_reshaper: wgpu::TextureReshaper,
     video_size: Vec2,
     webcam_capture: webcam::WebcamCapture,
-    first_run: bool,
+    segmentor: Segmentor,
 }
 
 const WIDTH: u32 = 1920;
@@ -64,6 +66,8 @@ fn model(app: &App) -> Model {
     let contour_texture_reshaper =
         render::create_texture_reshaper(&device, &contour_detector.texture, 1, sample_count);
 
+    let segmentor = Segmentor::new(&device, video_size, sample_count);
+
     println!("creating model");
     Model {
         contour_detector,
@@ -73,7 +77,7 @@ fn model(app: &App) -> Model {
         video_texture_reshaper,
         video_size,
         webcam_capture,
-        first_run: true,
+        segmentor,
     }
 }
 
@@ -85,27 +89,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     model.webcam_capture.update();
 
     if let Some(frame) = model.webcam_capture.get_frame_ref() {
-        // println!("got frame");
-        // if !model.first_run {
-        //     model.face_detector.finish_update();
-        //     // model.contour_detector.finish_update();
-        // } else {
-        //     model.first_run = false;
-        // }
-
-        if !model.face_detector.is_finished() {
-            model.face_detector.finish_update();
-        }
-        if model.face_detector.is_finished() {
-            // println!("updating face detector");
-            model.face_detector.start_update(frame);
-        }
-        // println!("updating...");
-        model.face_detector.finish_update();
-
-        // if model.contour_detector.is_finished() {
-        //     model.contour_detector.start_update(frame);
-        // }
+        // model.face_detector.update(frame);
 
         // The encoder we'll use to encode the compute pass and render pass.
         let desc = wgpu::CommandEncoderDescriptor {
@@ -113,24 +97,10 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         };
         let mut encoder = device.create_command_encoder(&desc);
 
-        // model.contour_detector.update_texture(device, &mut encoder);
-        // model.contour_detector.start_texture_upload();
-        // println!("updating texture");
-        model.webcam_capture.update_texture(device, &mut encoder);
-        // model.contour_detector.finish_texture_upload(device, &mut encoder);
+        model.segmentor.update(device, &mut encoder, frame);
 
         // submit encoded command buffer
-        // println!("submitting command buffer");
         window.queue().submit(Some(encoder.finish()));
-
-        // start processing frame
-        // if model.face_detector.is_finished() && model.contour_detector.is_finished() {
-        //     // model.contour_detector.start_update(frame);
-        //     model.face_detector.start_update(frame);
-        // }
-
-        // model.face_detector.finish_update();
-        // model.contour_detector.finish_update();
     }
 }
 
@@ -139,8 +109,9 @@ fn view(app: &App, model: &Model, frame: Frame) {
     {
         let mut encoder = frame.command_encoder();
         model
-            .video_texture_reshaper
-            // .contour_texture_reshaper
+            // .video_texture_reshaper
+            .segmentor
+            .texture_reshaper
             .encode_render_pass(frame.texture_view(), &mut *encoder);
     }
 

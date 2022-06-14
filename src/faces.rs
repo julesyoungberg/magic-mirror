@@ -12,7 +12,6 @@ pub struct FullFaceDetector {
     request_sender: Sender<Mat>,
     response_receiver: Receiver<Option<mediapipe::FaceMesh>>,
     worker_thread: thread::JoinHandle<()>,
-    finished: bool,
 }
 
 impl FullFaceDetector {
@@ -63,16 +62,12 @@ impl FullFaceDetector {
             request_sender,
             response_receiver,
             worker_thread,
-            finished: true,
         }
     }
 
-    pub fn start_update(&mut self, frame: &Mat) {
-        self.finished = false;
+    pub fn update(&mut self, frame: &Mat) {
         self.request_sender.send(frame.clone()).unwrap();
-    }
 
-    pub fn finish_update(&mut self) {
         match self.response_receiver.try_recv() {
             Ok(result) => {
                 if let Some(mesh) = result {
@@ -81,12 +76,6 @@ impl FullFaceDetector {
             }
             Err(_) => return,
         };
-
-        self.finished = true;
-    }
-
-    pub fn is_finished(&self) -> bool {
-        self.finished
     }
 
     pub fn draw_face(
