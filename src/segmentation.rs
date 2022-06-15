@@ -60,15 +60,6 @@ impl Segmentor {
 
                 opencv::core::flip(&result, &mut flip_frame, 1).unwrap();
 
-                // result = unsafe {
-                //     opencv::core::Mat::new_rows_cols(
-                //         video_size.x.round() as i32,
-                //         video_size.y.round() as i32,
-                //         opencv::core::CV_8UC3,
-                //     )
-                //     .unwrap()
-                // };
-
                 opencv::imgproc::cvt_color(
                     &flip_frame,
                     &mut result,
@@ -84,9 +75,8 @@ impl Segmentor {
         let video_width = video_size.x as u32;
         let video_height = video_size.y as u32;
 
-        let output_texture = create_app_texture(&device, video_width, video_height, sample_count);
-        let texture_reshaper =
-            create_texture_reshaper(&device, &output_texture, sample_count, sample_count);
+        let output_texture = create_app_texture(&device, video_width, video_height, 1);
+        let texture_reshaper = create_texture_reshaper(&device, &output_texture, 1, sample_count);
 
         Self {
             output_texture,
