@@ -8,16 +8,16 @@ use opencv::prelude::*;
 use crate::util;
 
 pub struct FullFaceDetector {
-    faces: Vec<mediapipe::FaceMesh>,
+    faces: Vec<Vec<mediapipe::Landmark>>,
     request_sender: Sender<Mat>,
-    response_receiver: Receiver<Option<mediapipe::FaceMesh>>,
+    response_receiver: Receiver<Vec<Vec<mediapipe::Landmark>>>,
     worker_thread: thread::JoinHandle<()>,
 }
 
 impl FullFaceDetector {
     pub fn new(video_size: Vec2) -> Self {
         let (request_sender, request_receiver) = channel::<Mat>();
-        let (response_sender, response_receiver) = channel::<Option<mediapipe::FaceMesh>>();
+        let (response_sender, response_receiver) = channel::<Vec<Vec<mediapipe::Landmark>>>();
 
         let worker_thread = thread::spawn(move || {
             let mut detector = mediapipe::face_mesh::FaceMeshDetector::default();
@@ -70,9 +70,7 @@ impl FullFaceDetector {
 
         match self.response_receiver.try_recv() {
             Ok(result) => {
-                if let Some(mesh) = result {
-                    self.faces = vec![mesh];
-                }
+                self.faces = result;
             }
             Err(_) => return,
         };
@@ -81,10 +79,10 @@ impl FullFaceDetector {
     pub fn draw_face(
         &self,
         draw: &Draw,
-        face: &mediapipe::FaceMesh,
+        face: &Vec<mediapipe::Landmark>,
         mapper: &impl Fn(&Vec2) -> Vec2,
     ) {
-        for landmark in &face.data {
+        for landmark in face {
             let mapped = mapper(&Vec2::new(landmark.x, landmark.y));
             draw.ellipse()
                 .color(STEELBLUE)
