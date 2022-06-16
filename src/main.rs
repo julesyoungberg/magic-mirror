@@ -1,6 +1,5 @@
 use nannou::prelude::*;
 
-mod contours;
 mod faces;
 mod render;
 mod segmentation;
@@ -10,7 +9,6 @@ mod util;
 mod video_capture;
 mod webcam;
 
-use crate::contours::*;
 use crate::faces::*;
 use crate::segmentation::*;
 
@@ -19,8 +17,6 @@ fn main() {
 }
 
 struct Model {
-    contour_detector: ContourDetector,
-    contour_texture_reshaper: wgpu::TextureReshaper,
     face_detector: FullFaceDetector,
     size: Vec2,
     video_texture_reshaper: wgpu::TextureReshaper,
@@ -61,17 +57,10 @@ fn model(app: &App) -> Model {
     let video_texture_reshaper =
         render::create_texture_reshaper(&device, &video_texture, 1, sample_count);
 
-    let contour_detector = ContourDetector::new(&app, &device, video_size);
-
-    let contour_texture_reshaper =
-        render::create_texture_reshaper(&device, &contour_detector.texture, 1, sample_count);
-
     let segmentor = Segmentor::new(&device, video_size, sample_count);
 
     println!("creating model");
     Model {
-        contour_detector,
-        contour_texture_reshaper,
         face_detector: FullFaceDetector::new(video_size),
         size,
         video_texture_reshaper,
