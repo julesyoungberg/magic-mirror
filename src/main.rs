@@ -89,7 +89,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     model.webcam_capture.update();
 
     if let Some(frame) = model.webcam_capture.get_frame_ref() {
-        // model.face_detector.update(frame);
+        model.face_detector.update(frame);
 
         // The encoder we'll use to encode the compute pass and render pass.
         let desc = wgpu::CommandEncoderDescriptor {
@@ -97,7 +97,8 @@ fn update(app: &App, model: &mut Model, _update: Update) {
         };
         let mut encoder = device.create_command_encoder(&desc);
 
-        model.segmentor.update(device, &mut encoder, frame);
+        model.webcam_capture.update_texture(device, &mut encoder);
+        // model.segmentor.update(device, &mut encoder, frame);
 
         // submit encoded command buffer
         window.queue().submit(Some(encoder.finish()));
@@ -109,9 +110,9 @@ fn view(app: &App, model: &Model, frame: Frame) {
     {
         let mut encoder = frame.command_encoder();
         model
-            // .video_texture_reshaper
-            .segmentor
-            .texture_reshaper
+            .video_texture_reshaper
+            // .segmentor
+            // .texture_reshaper
             .encode_render_pass(frame.texture_view(), &mut *encoder);
     }
 
