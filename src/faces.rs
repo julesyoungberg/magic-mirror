@@ -51,7 +51,9 @@ impl FullFaceDetector {
 
                 opencv::core::flip(&rgb_frame, &mut flip_frame, 1).unwrap(); // horizontal
 
+                println!("processing");
                 let result = detector.process(&flip_frame);
+                println!("found {} faces", result.len());
 
                 response_sender.send(result).unwrap();
             }
@@ -70,7 +72,9 @@ impl FullFaceDetector {
 
         match self.response_receiver.try_recv() {
             Ok(result) => {
-                self.faces = result;
+                if !result.is_empty() {
+                    self.faces = result;
+                }
             }
             Err(_) => return,
         };

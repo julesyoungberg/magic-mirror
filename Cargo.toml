@@ -13,4 +13,4 @@ regex = "1"
 ringbuf = "0.2"
 shaderc = "0.7"
 # ux-mediapipe = "0.1.0"
-mediapipe = { git = "https://github.com/julesyoungberg/mediapipe-rs", rev = "2f1c40b4946b6d1d1a6e44303af6e1e75aedfd81" }
+mediapipe = { git = "https://github.com/julesyoungberg/mediapipe-rs", rev = "8964ec306f995104f663e53a11edfe45358aadd8" }

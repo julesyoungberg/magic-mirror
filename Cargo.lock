@@ -1218,7 +1218,7 @@ checksum = "60302e4db3a61da70c0cb7991976248362f30319e88850c487b9b95bbf059e00"
 [[package]]
 name = "mediapipe"
 version = "0.1.0"
-source = "git+https://github.com/julesyoungberg/mediapipe-rs?rev=2f1c40b4946b6d1d1a6e44303af6e1e75aedfd81#2f1c40b4946b6d1d1a6e44303af6e1e75aedfd81"
+source = "git+https://github.com/julesyoungberg/mediapipe-rs?rev=8964ec306f995104f663e53a11edfe45358aadd8#8964ec306f995104f663e53a11edfe45358aadd8"
 dependencies = [
  "bindgen",
  "cgmath",
