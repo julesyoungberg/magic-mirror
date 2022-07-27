@@ -1,6 +1,7 @@
 use nannou::prelude::*;
 
 mod faces;
+mod holistic_detector;
 mod render;
 mod segmentation;
 mod texture;
@@ -9,20 +10,19 @@ mod util;
 mod video_capture;
 mod webcam;
 
-use crate::faces::*;
-use crate::segmentation::*;
+use crate::holistic_detector::*;
 
 fn main() {
     nannou::app(model).update(update).run();
 }
 
 struct Model {
-    face_detector: FullFaceDetector,
+    detector: HolisticDetector,
     size: Vec2,
     video_texture_reshaper: wgpu::TextureReshaper,
     video_size: Vec2,
     webcam_capture: webcam::WebcamCapture,
-    segmentor: Segmentor,
+    // segmentor: Segmentor,
 }
 
 const WIDTH: u32 = 1920;
@@ -57,16 +57,16 @@ fn model(app: &App) -> Model {
     let video_texture_reshaper =
         render::create_texture_reshaper(&device, &video_texture, 1, sample_count);
 
-    let segmentor = Segmentor::new(&device, video_size, sample_count);
+    // let segmentor = Segmentor::new(&device, video_size, sample_count);
 
     println!("creating model");
     Model {
-        face_detector: FullFaceDetector::new(video_size),
+        detector: HolisticDetector::new(video_size),
         size,
         video_texture_reshaper,
         video_size,
         webcam_capture,
-        segmentor,
+        // segmentor,
     }
 }
 
@@ -78,7 +78,7 @@ fn update(app: &App, model: &mut Model, _update: Update) {
     model.webcam_capture.update();
 
     if let Some(frame) = model.webcam_capture.get_frame_ref() {
-        model.face_detector.update(frame);
+        model.detector.update(frame);
 
         // The encoder we'll use to encode the compute pass and render pass.
         let desc = wgpu::CommandEncoderDescriptor {
@@ -108,8 +108,8 @@ fn view(app: &App, model: &Model, frame: Frame) {
     let draw = app.draw();
 
     model
-        .face_detector
-        .draw_faces(&draw, &model.video_size, &model.size);
+        .detector
+        .draw_detections(&draw, &model.video_size, &model.size);
 
     draw.to_frame(app, &frame).unwrap();
 }
