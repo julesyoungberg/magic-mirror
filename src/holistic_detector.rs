@@ -6,6 +6,7 @@ use nannou::prelude::*;
 use opencv::prelude::*;
 
 use crate::util;
+use crate::faces;
 
 pub struct HolisticDetector {
     detections: Vec<mediapipe::holistic::HolisticDetection>,
@@ -78,9 +79,26 @@ impl HolisticDetector {
         };
     }
 
-    fn draw_detection(&self, _draw: &Draw, _detection: &mediapipe::holistic::HolisticDetection, _mapper: &impl Fn(&Vec2) -> Vec2) {
-        println!("drawing detection");
-        // @todo
+    fn draw_detection(&self, draw: &Draw, detection: &mediapipe::holistic::HolisticDetection, mapper: &impl Fn(&Vec2) -> Vec2) {
+
+        if let Some(face) = &detection.face {
+            faces::draw_face(draw, &face.data.to_vec(), mapper);
+        }
+
+        if let Some(pose) = &detection.pose {
+            // @todo
+            println!("drawing pose");
+        }
+
+        if let Some(left_hand) = &detection.left_hand {
+            // @todo
+            println!("drawing left hand");
+        }
+
+        if let Some(right_hand) = &detection.right_hand {
+            // @todo
+            println!("drawing right hand");
+        }
     }
 
     pub fn draw_detections(&self, draw: &Draw, _video_size: &Vec2, draw_size: &Vec2) {

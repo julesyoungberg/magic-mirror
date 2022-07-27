@@ -80,22 +80,6 @@ impl FullFaceDetector {
         };
     }
 
-    pub fn draw_face(
-        &self,
-        draw: &Draw,
-        face: &Vec<mediapipe::Landmark>,
-        mapper: &impl Fn(&Vec2) -> Vec2,
-    ) {
-        for landmark in face {
-            let mapped = mapper(&Vec2::new(landmark.x, landmark.y));
-            draw.ellipse()
-                .color(STEELBLUE)
-                .w(10.0)
-                .h(10.0)
-                .x_y(mapped.x, mapped.y);
-        }
-    }
-
     pub fn draw_faces(&self, draw: &Draw, _video_size: &Vec2, draw_size: &Vec2) {
         let hwidth = draw_size.x * 0.5;
         let hheight = draw_size.y * 0.5;
@@ -108,7 +92,22 @@ impl FullFaceDetector {
         };
 
         for face in &self.faces {
-            self.draw_face(draw, &face.data.to_vec(), &mapper);
+            draw_face(draw, &face.data.to_vec(), &mapper);
         }
+    }
+}
+
+pub fn draw_face(
+    draw: &Draw,
+    face: &Vec<mediapipe::Landmark>,
+    mapper: &impl Fn(&Vec2) -> Vec2,
+) {
+    for landmark in face {
+        let mapped = mapper(&Vec2::new(landmark.x, landmark.y));
+        draw.ellipse()
+            .color(STEELBLUE)
+            .w(10.0)
+            .h(10.0)
+            .x_y(mapped.x, mapped.y);
     }
 }
