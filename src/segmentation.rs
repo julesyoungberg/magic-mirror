@@ -7,7 +7,6 @@ use opencv::prelude::*;
 
 use crate::render::*;
 use crate::texture;
-use crate::util;
 
 pub struct Segmentor {
     pub output_texture: wgpu::Texture,

@@ -4,7 +4,7 @@ use ringbuf::{Consumer, RingBuffer};
 use std::fmt;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::time::SystemTime;
-use std::{thread, time};
+use std::{thread};
 
 use crate::texture;
 

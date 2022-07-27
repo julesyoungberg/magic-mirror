@@ -8,16 +8,16 @@ use opencv::prelude::*;
 use crate::util;
 
 pub struct FullFaceDetector {
-    faces: Vec<Vec<mediapipe::Landmark>>,
+    faces: Vec<mediapipe::FaceMesh>,
     request_sender: Sender<Mat>,
-    response_receiver: Receiver<Vec<Vec<mediapipe::Landmark>>>,
+    response_receiver: Receiver<Vec<mediapipe::FaceMesh>>,
     worker_thread: thread::JoinHandle<()>,
 }
 
 impl FullFaceDetector {
     pub fn new(video_size: Vec2) -> Self {
         let (request_sender, request_receiver) = channel::<Mat>();
-        let (response_sender, response_receiver) = channel::<Vec<Vec<mediapipe::Landmark>>>();
+        let (response_sender, response_receiver) = channel::<Vec<mediapipe::FaceMesh>>();
 
         let worker_thread = thread::spawn(move || {
             let mut detector = mediapipe::face_mesh::FaceMeshDetector::default();
@@ -96,7 +96,7 @@ impl FullFaceDetector {
         }
     }
 
-    pub fn draw_faces(&self, draw: &Draw, video_size: &Vec2, draw_size: &Vec2) {
+    pub fn draw_faces(&self, draw: &Draw, _video_size: &Vec2, draw_size: &Vec2) {
         let hwidth = draw_size.x * 0.5;
         let hheight = draw_size.y * 0.5;
 
@@ -108,7 +108,7 @@ impl FullFaceDetector {
         };
 
         for face in &self.faces {
-            self.draw_face(draw, &face, &mapper);
+            self.draw_face(draw, &face.data.to_vec(), &mapper);
         }
     }
 }
