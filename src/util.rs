@@ -40,3 +40,20 @@ pub fn floats_as_byte_vec(data: &[f32]) -> Vec<u8> {
         .for_each(|f| bytes.extend(float_as_bytes(f).iter()));
     bytes
 }
+
+pub fn draw_landmarks<C: nannou::color::IntoLinSrgba<f32> + std::marker::Copy>(
+    draw: &Draw, 
+    landmarks: &Vec<mediapipe::Landmark>,
+    color: C,
+    mapper: &impl Fn(&Vec2) -> Vec2
+) {
+    for landmark in landmarks {
+        let mapped = mapper(&Vec2::new(landmark.x, landmark.y));
+        draw
+            .ellipse()
+            .color(color)
+            .w(10.0)
+            .h(10.0)
+            .x_y(mapped.x, mapped.y);
+    }
+}

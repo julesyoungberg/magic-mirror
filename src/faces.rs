@@ -92,22 +92,7 @@ impl FullFaceDetector {
         };
 
         for face in &self.faces {
-            draw_face(draw, &face.data.to_vec(), &mapper);
+            util::draw_landmarks(draw, &face.data.to_vec(), STEELBLUE, &mapper);
         }
-    }
-}
-
-pub fn draw_face(
-    draw: &Draw,
-    face: &Vec<mediapipe::Landmark>,
-    mapper: &impl Fn(&Vec2) -> Vec2,
-) {
-    for landmark in face {
-        let mapped = mapper(&Vec2::new(landmark.x, landmark.y));
-        draw.ellipse()
-            .color(STEELBLUE)
-            .w(10.0)
-            .h(10.0)
-            .x_y(mapped.x, mapped.y);
     }
 }

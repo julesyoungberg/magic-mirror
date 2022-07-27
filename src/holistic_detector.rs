@@ -82,22 +82,19 @@ impl HolisticDetector {
     fn draw_detection(&self, draw: &Draw, detection: &mediapipe::holistic::HolisticDetection, mapper: &impl Fn(&Vec2) -> Vec2) {
 
         if let Some(face) = &detection.face {
-            faces::draw_face(draw, &face.data.to_vec(), mapper);
+            util::draw_landmarks(draw, &face.data.to_vec(), STEELBLUE, mapper);
         }
 
         if let Some(pose) = &detection.pose {
-            // @todo
-            println!("drawing pose");
+            util::draw_landmarks(draw, &pose.data.to_vec(), CORAL, mapper);
         }
 
         if let Some(left_hand) = &detection.left_hand {
-            // @todo
-            println!("drawing left hand");
+            util::draw_landmarks(draw, &left_hand.data.to_vec(), CHARTREUSE, mapper);
         }
 
         if let Some(right_hand) = &detection.right_hand {
-            // @todo
-            println!("drawing right hand");
+            util::draw_landmarks(draw, &right_hand.data.to_vec(), YELLOW, mapper);
         }
     }
 
